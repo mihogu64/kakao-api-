@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kakao Map</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-card">
+      <div class="auth-badge">Kakao Map</div>
+      <h1 id="authTitle">로그인</h1>
+      <p id="authDescription">로그인 후 카카오 지도를 사용할 수 있습니다.</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="loginTab" type="button">로그인</button>
+        <button class="auth-tab" id="signupTab" type="button">회원가입</button>
+      </div>
+
+      <div class="auth-message" id="authMessage" aria-live="polite"></div>
+
+      <form class="auth-form" id="authForm">
+        <label class="field compact">
+          <span>닉네임</span>
+          <input id="authUsername" type="text" autocomplete="username" required />
+        </label>
+        <label class="field compact">
+          <span>비밀번호</span>
+          <input id="authPassword" type="password" autocomplete="current-password" required />
+        </label>
+        <button id="authSubmit" class="primary-btn" type="submit">로그인</button>
+      </form>
+    </div>
+  </section>
+
+  <main class="map-wrap" id="gameScreen" hidden>
+    <div id="map"></div>
+    <div id="gridStatus" class="grid-status" hidden></div>
+    <button id="locateButton" class="locate-button" type="button" title="내 위치로 이동">내 위치</button>
+    <section class="test-controller" id="testController" aria-label="개발자용 테스트 컨트롤러">
+      <div class="test-controller-header">
+        <strong>테스트 컨트롤러</strong>
+        <button id="testModeToggle" type="button">테스트 모드 켜기</button>
+      </div>
+      <div class="test-controller-controls" hidden>
+        <button type="button" data-mock-direction="up">상</button>
+        <button type="button" data-mock-direction="left">좌</button>
+        <button type="button" data-mock-direction="down">하</button>
+        <button type="button" data-mock-direction="right">우</button>
+        <button id="autoMoveToggle" type="button">자동 이동 시작</button>
+      </div>
+    </section>
+    <aside class="location-history" aria-label="이동한 위치 기록">
+      <h2>내 이동 기록</h2>
+      <ol id="locationHistoryList"></ol>
+    </aside>
+  </main>
+
+  <script src="/kakao-sdk.js?appkey=7942bb209f76e0bd9750b522509ba91f&autoload=false"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

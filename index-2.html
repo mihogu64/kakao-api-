@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Territory Battle Prototype</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-kicker">GPS Territory Battle</div>
+        <h1>땅따먹기 프로토타입</h1>
+        <p>5m x 5m 타일을 GPS로 즉시 점령하는 실시간 팀 대항 게임입니다.</p>
+      </div>
+
+      <section class="panel">
+        <label class="field">
+          <span>내 팀</span>
+          <select id="teamSelect"></select>
+        </label>
+
+        <label class="field">
+          <span>내 사용자 ID</span>
+          <input id="userIdInput" type="text" />
+        </label>
+
+        <button id="saveProfileBtn" class="primary-btn">프로필 저장</button>
+      </section>
+
+      <section class="panel stats" id="statusCard">
+        <div class="stat-row"><span>시즌</span><strong id="seasonKey">-</strong></div>
+        <div class="stat-row"><span>상태</span><strong id="phaseLabel">-</strong></div>
+        <div class="stat-row"><span>현재 타일</span><strong id="tileKey">-</strong></div>
+        <div class="stat-row"><span>점령 팀</span><strong id="ownerLabel">-</strong></div>
+        <div class="stat-row"><span>보호막 만료</span><strong id="shieldLabel">-</strong></div>
+        <div class="stat-row"><span>GPS 정확도</span><strong id="accuracyLabel">-</strong></div>
+      </section>
+
+      <section class="panel notice" id="settlementOverlay" hidden>
+        <h2>정산 중입니다</h2>
+        <p>23:30 ~ 24:00 동안은 점령이 중지됩니다.</p>
+      </section>
+
+      <section class="panel leaderboard">
+        <h2>상위 팀</h2>
+        <ol id="leaderboard"></ol>
+      </section>
+    </aside>
+
+    <main class="map-wrap">
+      <div id="map"></div>
+      <div class="map-hint">현재 위치 주변 5m 타일을 렌더링합니다.</div>
+    </main>
+  </div>
+
+  <script src="/kakao-sdk.js?appkey=7942bb209f76e0bd9750b522509ba91f&autoload=false"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
