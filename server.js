@@ -1,12 +1,22 @@
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'state.json');
 const GRID_SIZE_DEGREES = 0.00009;
 const SHIELD_MS = 90 * 60 * 1000;
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+const TEAM_BALANCE_LIMIT = 5;
+
+const FIXED_TEAM_DEFINITIONS = [
+  { id: 'red', name: '레드', color: '#FF3B30' },
+  { id: 'blue', name: '블루', color: '#007AFF' },
+  { id: 'green', name: '그린', color: '#34C759' },
+];
 
 const REWARD_TABLE = [
   { rank: 1, personal: 50, group: 20 },
@@ -16,12 +26,16 @@ const REWARD_TABLE = [
 
 const state = {
   currentSeasonKey: null,
+  tileResetAt: null,
   finalizedSeasonKeys: new Set(),
-  teams: new Map([
-    ['alpha', { id: 'alpha', name: 'ALPHA', color: '#ff5b5f', groupPoints: 0, joinMethod: 'public', leaderUserId: null, memberUserIds: [], pendingUserIds: [] }],
-    ['delta', { id: 'delta', name: 'DELTA', color: '#38bdf8', groupPoints: 0, joinMethod: 'public', leaderUserId: null, memberUserIds: [], pendingUserIds: [] }],
-    ['charlie', { id: 'charlie', name: 'CHARLIE', color: '#f59e0b', groupPoints: 0, joinMethod: 'public', leaderUserId: null, memberUserIds: [], pendingUserIds: [] }],
-  ]),
+  teams: new Map(FIXED_TEAM_DEFINITIONS.map((team) => [team.id, {
+    ...team,
+    groupPoints: 0,
+    joinMethod: 'public',
+    leaderUserId: null,
+    memberUserIds: [],
+    pendingUserIds: [],
+  }])),
   users: new Map(),
   authByUsername: new Map(),
   sessions: new Map(),
@@ -30,6 +44,70 @@ const state = {
   seasons: new Map(),
   clients: new Set(),
 };
+
+function savePersistentState() {
+  const snapshot = {
+    currentSeasonKey: state.currentSeasonKey,
+    tileResetAt: state.tileResetAt,
+    users: Array.from(state.users.values()),
+    teams: Array.from(state.teams.values()),
+    tiles: Array.from(state.tiles.values()),
+    seasons: Array.from(state.seasons.values()),
+  };
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(DATA_FILE, JSON.stringify(snapshot, null, 2), 'utf8');
+}
+
+function loadPersistentState() {
+  if (!fs.existsSync(DATA_FILE)) {
+    return;
+  }
+
+  try {
+    const snapshot = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+    const legacyTeamIds = { alpha: 'red', delta: 'blue', charlie: 'green' };
+    (snapshot.users || []).forEach((user) => {
+      user.teamId = legacyTeamIds[user.teamId] || user.teamId;
+      state.users.set(user.id, user);
+      state.authByUsername.set(user.username, user);
+      if (user.teamId) {
+        state.memberships.set(user.id, user.teamId);
+      }
+    });
+    (snapshot.teams || []).forEach((team) => {
+      const fixedTeamId = legacyTeamIds[team.id] || team.id;
+      if (state.teams.has(fixedTeamId)) {
+        state.teams.set(fixedTeamId, {
+          ...state.teams.get(fixedTeamId),
+          ...team,
+          id: fixedTeamId,
+          name: FIXED_TEAM_DEFINITIONS.find((definition) => definition.id === fixedTeamId).name,
+          color: FIXED_TEAM_DEFINITIONS.find((definition) => definition.id === fixedTeamId).color,
+          memberUserIds: [],
+          pendingUserIds: [],
+        });
+      }
+    });
+    state.users.forEach((user) => {
+      const team = state.teams.get(user.teamId);
+      if (team) {
+        team.memberUserIds.push(user.id);
+        state.memberships.set(user.id, team.id);
+      } else {
+        user.teamId = null;
+      }
+    });
+    (snapshot.tiles || []).forEach((tile) => {
+      tile.ownerTeamId = legacyTeamIds[tile.ownerTeamId] || tile.ownerTeamId;
+      state.tiles.set(`${tile.seasonKey}:${tile.tileKey}`, tile);
+    });
+    (snapshot.seasons || []).forEach((season) => state.seasons.set(season.seasonKey, season));
+    state.currentSeasonKey = snapshot.currentSeasonKey || null;
+    state.tileResetAt = snapshot.tileResetAt || null;
+  } catch (error) {
+    console.error(`Persistent state could not be loaded: ${error.message}`);
+  }
+}
 
 function toKstParts(date = new Date()) {
   const kst = new Date(date.getTime() + KST_OFFSET_MS);
@@ -71,6 +149,33 @@ function getSeasonPhase(date = new Date()) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+const PASSWORD_SPECIALS = '!@#$%^&*()_+-=';
+
+function hasForbiddenSequence(value) {
+  const normalized = value.toLowerCase();
+  const sequences = ['0123', '1234', '2345', '3456', '4567', '5678', '6789', 'abcd', 'bcde', 'cdef', 'qwer', 'wert', 'erty', 'qwerty'];
+  return /(.)\1\1/.test(normalized) || sequences.some((sequence) => normalized.includes(sequence));
+}
+
+function validateCredentials(username, password) {
+  if (!/^[A-Za-z]{5,12}$/.test(username)) {
+    return '닉네임은 영문만 사용해 5~12자로 입력하세요.';
+  }
+  if (!/^[A-Za-z0-9!@#$%^&*()_+\-=]+$/.test(password)) {
+    return '비밀번호는 영문, 숫자, 허용된 특수문자만 사용할 수 있습니다.';
+  }
+  if ((password.match(/[0-9]/g) || []).length < 2) {
+    return '비밀번호에는 숫자가 2개 이상 필요합니다.';
+  }
+  if ((password.match(/[!@#$%^&*()_+\-=]/g) || []).length < 1) {
+    return `비밀번호에는 특수문자(${PASSWORD_SPECIALS}) 중 1개 이상이 필요합니다.`;
+  }
+  if (hasForbiddenSequence(username) || hasForbiddenSequence(password)) {
+    return '1234, aaaa, qwerty처럼 연속되거나 반복되는 문자는 사용할 수 없습니다.';
+  }
+  return null;
 }
 
 function tileFromLatLng(lat, lng) {
@@ -144,6 +249,28 @@ function sanitizeTeam(team) {
     members: memberUsers.map((user) => ({ id: user.id, username: user.username })),
     pendingRequests: pendingUsers.map((user) => ({ id: user.id, username: user.username })),
   };
+}
+
+function getTeamMemberCount(teamId) {
+  return Array.from(state.users.values()).filter((user) => user.teamId === teamId).length;
+}
+
+function getTeamSelectionOptions() {
+  const counts = FIXED_TEAM_DEFINITIONS.map((team) => ({
+    team,
+    memberCount: getTeamMemberCount(team.id),
+  }));
+  const maxCount = Math.max(...counts.map((entry) => entry.memberCount), 0);
+  const minCount = Math.min(...counts.map((entry) => entry.memberCount));
+  const balancingActive = maxCount - minCount >= TEAM_BALANCE_LIMIT;
+
+  return counts.map(({ team, memberCount }) => ({
+    id: team.id,
+    name: team.name,
+    color: team.color,
+    memberCount,
+    selectionDisabled: balancingActive && memberCount === maxCount,
+  }));
 }
 
 function isTeamColorInUse(color, excludeTeamId = null) {
@@ -235,13 +362,14 @@ function addUserToTeam(userId, teamId) {
   return user;
 }
 
-function createUser(username, password) {
+function createUser(username, password, teamId = null) {
   const userId = `user_${Math.random().toString(36).slice(2, 10)}`;
   const user = {
     id: userId,
     username,
     password,
-    teamId: null,
+    createdAt: nowIso(),
+    teamId,
     personalPoints: 0,
     groupPoints: 0,
     lastLat: null,
@@ -252,6 +380,10 @@ function createUser(username, password) {
 
   state.users.set(userId, user);
   state.authByUsername.set(username, user);
+  if (teamId) {
+    addUserToTeam(userId, teamId);
+  }
+  savePersistentState();
   return user;
 }
 
@@ -318,7 +450,10 @@ function getVisibleTiles(seasonKey, centerLat, centerLng, radius = 2) {
         (center.gridX + dx) * GRID_SIZE_DEGREES,
       );
       const record = getTileRecord(seasonKey, tileKey, tile);
-      result.push(record);
+      result.push({
+        ...record,
+        ownerTeamColor: record.ownerTeamId ? state.teams.get(record.ownerTeamId)?.color || null : null,
+      });
     }
   }
 
@@ -491,8 +626,9 @@ function handleCapture(req, res) {
   parseBody(req)
     .then((payload) => {
       const authUser = getAuthUser(req);
-      const { lat, lng, accuracy } = payload;
-      if (!authUser || typeof lat !== 'number' || typeof lng !== 'number') {
+      const points = Array.isArray(payload.points) ? payload.points : [payload];
+      const currentPoint = payload.location || points[points.length - 1];
+      if (!authUser || !currentPoint || typeof currentPoint.lat !== 'number' || typeof currentPoint.lng !== 'number') {
         sendJson(res, 401, { message: '로그인이 필요합니다.' });
         return;
       }
@@ -507,45 +643,48 @@ function handleCapture(req, res) {
       }
 
       const team = authUser.teamId ? state.teams.get(authUser.teamId) : null;
-      if (!team) {
-        sendJson(res, 400, { message: '팀에 먼저 가입해야 점령할 수 있습니다.' });
-        return;
-      }
+      const user = ensureUser(authUser.id, team ? team.id : null);
+      user.lastLat = currentPoint.lat;
+      user.lastLng = currentPoint.lng;
+      user.accuracyM = typeof currentPoint.accuracy === 'number' ? currentPoint.accuracy : null;
+      user.lastSpeed = typeof currentPoint.speed === 'number' ? currentPoint.speed : null;
+      user.lastHeading = typeof currentPoint.heading === 'number' ? currentPoint.heading : null;
+      user.lastLocationTimestamp = typeof currentPoint.timestamp === 'number' ? currentPoint.timestamp : Date.now();
+      user.lastSeenAt = nowIso();
 
-      const user = ensureUser(authUser.id, team.id);
-      user.lastLat = lat;
-      user.lastLng = lng;
-      user.accuracyM = typeof accuracy === 'number' ? accuracy : null;
-
-      const tile = tileFromLatLng(lat, lng);
-      const record = getTileRecord(seasonKey, tile.tileKey, tile);
-      const shieldActive = record.shieldExpiresAt && new Date(record.shieldExpiresAt).getTime() > Date.now();
-
-      if (record.ownerTeamId && record.ownerTeamId !== team.id && shieldActive) {
-        sendJson(res, 200, {
-          message: '방어막이 활성화되어 점령이 막혔습니다.',
-          captured: false,
-          phase,
-          seasonKey,
-          tile: record,
+      const capturedTiles = [];
+      const capturedTileKeys = new Set();
+      points.forEach((point) => {
+        if (typeof point.lat !== 'number' || typeof point.lng !== 'number') {
+          return;
+        }
+        const tile = tileFromLatLng(point.lat, point.lng);
+        if (capturedTileKeys.has(tile.tileKey)) {
+          return;
+        }
+        capturedTileKeys.add(tile.tileKey);
+        const record = getTileRecord(seasonKey, tile.tileKey, tile);
+        record.ownerTeamId = team ? team.id : null;
+        record.ownerUserId = authUser.id;
+        record.claimedAt = nowIso();
+        record.shieldExpiresAt = new Date(Date.now() + SHIELD_MS).toISOString();
+        record.updatedAt = nowIso();
+        capturedTiles.push({
+          ...record,
+          ownerTeamColor: team ? team.color : null,
         });
-        return;
-      }
+      });
 
-      record.ownerTeamId = team.id;
-      record.ownerUserId = authUser.id;
-      record.claimedAt = nowIso();
-      record.shieldExpiresAt = new Date(Date.now() + SHIELD_MS).toISOString();
-      record.updatedAt = nowIso();
-
-      broadcast('tile-updated', { seasonKey, tile: record });
+      savePersistentState();
+      capturedTiles.forEach((tile) => broadcast('tile-updated', { seasonKey, tile }));
 
       sendJson(res, 200, {
-        message: '점령 성공',
-        captured: true,
+        message: capturedTiles.length ? '타일 저장 성공' : '위치 저장 성공',
+        captured: capturedTiles.length > 0,
         phase,
         seasonKey,
-        tile: record,
+        tile: capturedTiles[capturedTiles.length - 1] || null,
+        tiles: capturedTiles,
       });
     })
     .catch((error) => {
@@ -558,12 +697,93 @@ function handleApi(req, res, pathname, query) {
   const seasonKey = state.currentSeasonKey;
   const phase = getSeasonPhase(new Date());
 
+  if (pathname === '/api/dev/users' && req.method === 'GET') {
+    const users = Array.from(state.users.values()).map((user) => ({
+      username: user.username,
+      createdAt: user.createdAt || null,
+    }));
+    sendJson(res, 200, { users });
+    return;
+  }
+
+  if (pathname === '/api/dev/reset-tiles' && req.method === 'POST') {
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      sendJson(res, 401, { message: '로그인이 필요합니다.' });
+      return;
+    }
+
+    state.tiles.clear();
+    state.tileResetAt = nowIso();
+    savePersistentState();
+    broadcast('tiles-reset', { at: state.tileResetAt });
+    sendJson(res, 200, { message: '모든 타일을 초기화했습니다.', tileResetAt: state.tileResetAt });
+    return;
+  }
+
+  if (pathname === '/api/dev/delete-account' && req.method === 'POST') {
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      sendJson(res, 401, { message: '로그인이 필요합니다.' });
+      return;
+    }
+
+    parseBody(req).then((payload) => {
+      const targetUserId = String(payload.userId || authUser.id).trim();
+      const targetUser = getUserById(targetUserId);
+      if (!targetUser) {
+        sendJson(res, 404, { message: '삭제할 사용자를 찾을 수 없습니다.' });
+        return;
+      }
+
+      const team = targetUser.teamId ? state.teams.get(targetUser.teamId) : null;
+      if (team) {
+        team.memberUserIds = team.memberUserIds.filter((userId) => userId !== targetUser.id);
+        team.pendingUserIds = team.pendingUserIds.filter((userId) => userId !== targetUser.id);
+      }
+      state.users.delete(targetUser.id);
+      state.authByUsername.delete(targetUser.username);
+      state.memberships.delete(targetUser.id);
+      for (const [token, session] of state.sessions.entries()) {
+        if (session.userId === targetUser.id) {
+          state.sessions.delete(token);
+        }
+      }
+      for (const [tileKey, tile] of state.tiles.entries()) {
+        if (tile.ownerUserId === targetUser.id) {
+          state.tiles.delete(tileKey);
+        }
+      }
+      savePersistentState();
+      broadcast('player-deleted', { userId: targetUser.id });
+      sendJson(res, 200, { message: '개발자 계정을 삭제했습니다.', deletedUserId: targetUser.id });
+    }).catch((error) => sendJson(res, 400, { message: error.message }));
+    return;
+  }
+
   if (pathname === '/api/auth/register' && req.method === 'POST') {
     parseBody(req).then((payload) => {
       const username = String(payload.username || '').trim();
       const password = String(payload.password || '').trim();
+      const teamId = String(payload.teamId || '').trim();
       if (!username || !password) {
         sendJson(res, 400, { message: 'username and password are required' });
+        return;
+      }
+
+      const credentialError = validateCredentials(username, password);
+      if (credentialError) {
+        sendJson(res, 400, { message: credentialError });
+        return;
+      }
+
+      const teamOption = getTeamSelectionOptions().find((team) => team.id === teamId);
+      if (!teamOption) {
+        sendJson(res, 400, { message: '가입할 팀을 선택하세요.' });
+        return;
+      }
+      if (teamOption.selectionDisabled) {
+        sendJson(res, 409, { message: '현재 인원이 많은 팀은 잠시 선택할 수 없습니다.' });
         return;
       }
 
@@ -572,10 +792,58 @@ function handleApi(req, res, pathname, query) {
         return;
       }
 
-      const user = createUser(username, password);
+      const user = createUser(username, password, teamId);
       const token = createSession(user.id);
-      sendJson(res, 200, { token, user: { id: user.id, username: user.username, teamId: user.teamId } });
+      sendJson(res, 200, { token, user: { id: user.id, username: user.username, teamId: user.teamId }, team: sanitizeTeam(state.teams.get(teamId)) });
     }).catch((error) => sendJson(res, 400, { message: error.message }));
+    return;
+  }
+
+  if (pathname === '/api/players' && req.method === 'GET') {
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      sendJson(res, 401, { message: '로그인이 필요합니다.' });
+      return;
+    }
+
+    const activeSince = Date.now() - 5 * 60 * 1000;
+    const players = Array.from(state.users.values())
+      .filter((user) => user.lastLat !== null && user.lastLng !== null && user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= activeSince)
+      .map((user) => ({
+        id: user.id,
+        username: user.username,
+        teamId: user.teamId,
+        lat: user.lastLat,
+        lng: user.lastLng,
+        accuracyM: user.accuracyM,
+        speed: user.lastSpeed ?? null,
+        heading: user.lastHeading ?? null,
+        locationTimestamp: user.lastLocationTimestamp ?? null,
+        lastSeenAt: user.lastSeenAt,
+      }));
+    sendJson(res, 200, { players });
+    return;
+  }
+
+  if (pathname === '/api/team-members' && req.method === 'GET') {
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      sendJson(res, 401, { message: '로그인이 필요합니다.' });
+      return;
+    }
+
+    const team = authUser.teamId ? state.teams.get(authUser.teamId) : null;
+    const members = team
+      ? team.memberUserIds.map((userId) => getUserById(userId)).filter(Boolean).map((user) => ({
+        id: user.id,
+        username: user.username,
+        online: Boolean(user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= Date.now() - 5 * 60 * 1000),
+      }))
+      : [];
+    sendJson(res, 200, {
+      team: team ? { id: team.id, name: team.name, color: team.color } : null,
+      members,
+    });
     return;
   }
 
@@ -590,7 +858,11 @@ function handleApi(req, res, pathname, query) {
       }
 
       const token = createSession(user.id);
-      sendJson(res, 200, { token, user: { id: user.id, username: user.username, teamId: user.teamId } });
+      sendJson(res, 200, {
+        token,
+        user: { id: user.id, username: user.username, teamId: user.teamId },
+        team: sanitizeTeam(user.teamId ? state.teams.get(user.teamId) : null),
+      });
     }).catch((error) => sendJson(res, 400, { message: error.message }));
     return;
   }
@@ -619,43 +891,14 @@ function handleApi(req, res, pathname, query) {
   if (pathname === '/api/teams' && req.method === 'GET') {
     const user = getAuthUser(req);
     sendJson(res, 200, {
-      teams: Array.from(state.teams.values()).map(sanitizeTeam),
+      teams: getTeamSelectionOptions(),
       activeTeamId: user ? user.teamId : null,
     });
     return;
   }
 
   if (pathname === '/api/teams' && req.method === 'POST') {
-    const user = getAuthUser(req);
-    if (!user) {
-      sendJson(res, 401, { message: 'Unauthorized' });
-      return;
-    }
-
-    parseBody(req).then((payload) => {
-      const name = String(payload.name || '').trim();
-      const joinMethod = payload.joinMethod === 'approval' ? 'approval' : 'public';
-      const color = String(payload.color || '').trim();
-      if (!name) {
-        sendJson(res, 400, { message: '팀 이름이 필요합니다.' });
-        return;
-      }
-
-      if (isTeamColorInUse(color)) {
-        sendJson(res, 409, { message: '이미 다른팀이 사용하고 있는 색 입니다' });
-        return;
-      }
-
-      const exists = Array.from(state.teams.values()).some((team) => team.name.toLowerCase() === name.toLowerCase());
-      if (exists) {
-        sendJson(res, 409, { message: '이미 존재하는 팀 이름입니다.' });
-        return;
-      }
-
-      const team = createTeam(name, joinMethod, user.id, color);
-      addUserToTeam(user.id, team.id);
-      sendJson(res, 200, { team: sanitizeTeam(team), userTeamId: team.id });
-    }).catch((error) => sendJson(res, 400, { message: error.message }));
+    sendJson(res, 405, { message: '팀은 시스템에 고정되어 있어 새로 만들 수 없습니다.' });
     return;
   }
 
@@ -674,7 +917,13 @@ function handleApi(req, res, pathname, query) {
     }
 
     if (team.joinMethod === 'public') {
+      const teamOption = getTeamSelectionOptions().find((option) => option.id === teamId);
+      if (teamOption?.selectionDisabled) {
+        sendJson(res, 409, { message: '현재 인원이 많은 팀은 잠시 선택할 수 없습니다.' });
+        return;
+      }
       addUserToTeam(user.id, teamId);
+      savePersistentState();
       sendJson(res, 200, { status: 'joined', team: sanitizeTeam(team), userTeamId: teamId });
       return;
     }
@@ -685,6 +934,7 @@ function handleApi(req, res, pathname, query) {
     }
 
     team.pendingUserIds.push(user.id);
+    savePersistentState();
     sendJson(res, 200, { status: 'requested', team: sanitizeTeam(team) });
     return;
   }
@@ -716,6 +966,7 @@ function handleApi(req, res, pathname, query) {
       }
 
       addUserToTeam(applicantUserId, teamId);
+      savePersistentState();
       sendJson(res, 200, { status: 'approved', team: sanitizeTeam(team) });
     }).catch((error) => sendJson(res, 400, { message: error.message }));
     return;
@@ -751,7 +1002,35 @@ function handleApi(req, res, pathname, query) {
     }
 
     const tiles = getVisibleTiles(seasonKey, lat, lng, radius);
-    sendJson(res, 200, { seasonKey, tiles });
+    sendJson(res, 200, { seasonKey, tiles, tileResetAt: state.tileResetAt });
+    return;
+  }
+
+  if (pathname === '/api/owned-tiles' && req.method === 'GET') {
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      sendJson(res, 401, { message: '로그인이 필요합니다.' });
+      return;
+    }
+
+    const south = Number(query.south);
+    const west = Number(query.west);
+    const north = Number(query.north);
+    const east = Number(query.east);
+    if (![south, west, north, east].every(Number.isFinite) || south >= north || west >= east) {
+      sendJson(res, 400, { message: '지도 범위가 필요합니다.' });
+      return;
+    }
+
+    const tiles = Array.from(state.tiles.values())
+      .filter((tile) => tile.seasonKey === seasonKey && tile.ownerUserId
+        && tile.centerLat >= south && tile.centerLat <= north
+        && tile.centerLng >= west && tile.centerLng <= east)
+      .map((tile) => ({
+        ...tile,
+        ownerTeamColor: tile.ownerTeamId ? state.teams.get(tile.ownerTeamId)?.color || null : null,
+      }));
+    sendJson(res, 200, { seasonKey, tiles, tileResetAt: state.tileResetAt });
     return;
   }
 
@@ -764,6 +1043,17 @@ function handleApi(req, res, pathname, query) {
 }
 
 const publicDir = path.join(__dirname, 'public');
+
+function getNetworkAddress() {
+  const interfaces = os.networkInterfaces();
+  for (const entries of Object.values(interfaces)) {
+    const address = entries?.find((entry) => entry.family === 'IPv4' && !entry.internal);
+    if (address) {
+      return address.address;
+    }
+  }
+  return 'localhost';
+}
 
 const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, 'http://localhost');
@@ -819,6 +1109,8 @@ const server = http.createServer((req, res) => {
   sendJson(res, 404, { message: 'Not found' });
 });
 
+loadPersistentState();
+
 setInterval(() => {
   resetIfNeeded(new Date());
   const seasonKey = state.currentSeasonKey;
@@ -836,5 +1128,5 @@ ensureSeason(startOfWeekKey(new Date()));
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Territory Battle server running at http://localhost:${PORT}`);
-  console.log(`Network sharing URL: http://192.168.45.218:${PORT}`);
+  console.log(`Network sharing URL: http://${getNetworkAddress()}:${PORT}`);
 });

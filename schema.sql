@@ -15,18 +15,21 @@ CREATE TABLE seasons (
 CREATE TABLE teams (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   season_id uuid NOT NULL REFERENCES seasons(id) ON DELETE CASCADE,
+  team_key text NOT NULL,
   name text NOT NULL,
   color_hex text NOT NULL,
   group_points numeric(12, 2) NOT NULL DEFAULT 0,
   total_tiles integer NOT NULL DEFAULT 0,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (season_id, team_key),
   UNIQUE (season_id, name)
 );
 
 CREATE TABLE users (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   nickname text NOT NULL,
+  password_hash text NOT NULL,
   personal_points numeric(12, 2) NOT NULL DEFAULT 0,
   group_points numeric(12, 2) NOT NULL DEFAULT 0,
   last_lat double precision,
@@ -63,6 +66,18 @@ CREATE TABLE tile_states (
 
 CREATE INDEX idx_tile_states_owner_team ON tile_states (season_id, owner_team_id);
 CREATE INDEX idx_tile_states_shield ON tile_states (season_id, shield_expires_at);
+
+-- Insert these three rows for every new season; team_key is fixed by the application.
+-- red: #FF3B30, blue: #007AFF, green: #34C759
+INSERT INTO teams (season_id, team_key, name, color_hex)
+SELECT seasons.id, fixed.team_key, fixed.name, fixed.color_hex
+FROM seasons
+CROSS JOIN (VALUES
+  ('red', '레드', '#FF3B30'),
+  ('blue', '블루', '#007AFF'),
+  ('green', '그린', '#34C759')
+) AS fixed(team_key, name, color_hex)
+ON CONFLICT (season_id, team_key) DO NOTHING;
 
 CREATE TABLE capture_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

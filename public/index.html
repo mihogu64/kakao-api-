@@ -9,9 +9,9 @@
 <body>
   <section class="auth-screen" id="authScreen">
     <div class="auth-card">
-      <div class="auth-badge">Kakao Map</div>
+      <div class="auth-badge">TERRITORY / KAKAO MAP</div>
       <h1 id="authTitle">로그인</h1>
-      <p id="authDescription">로그인 후 카카오 지도를 사용할 수 있습니다.</p>
+      <p id="authDescription">당신이 지나간 곳이 팀의 영역이 됩니다.</p>
 
       <div class="auth-tabs">
         <button class="auth-tab active" id="loginTab" type="button">로그인</button>
@@ -29,6 +29,35 @@
           <span>비밀번호</span>
           <input id="authPassword" type="password" autocomplete="current-password" required />
         </label>
+        <label class="field compact" id="emailField" hidden>
+          <span>이메일</span>
+          <input id="authEmail" type="email" autocomplete="email" placeholder="name@example.com" />
+        </label>
+        <fieldset class="team-selection" id="teamSelection" hidden>
+          <legend>가입할 세력</legend>
+          <p class="team-selection-help">가입 후에는 이 세력의 색으로 타일이 표시됩니다.</p>
+          <div class="team-options" id="teamOptions"></div>
+        </fieldset>
+        <fieldset class="terms-box" id="termsField" hidden>
+          <legend>이용 약관 및 위치 정보 안내</legend>
+          <details>
+            <summary>약관 내용 보기</summary>
+            <div class="terms-copy">
+              <p><strong>수집 목적</strong> 게임 내 캐릭터 이동, 주변 이벤트·아이템 노출, 위치 기반 랭킹 서비스 제공을 위해 위치 정보를 사용합니다.</p>
+              <p><strong>보유 기간</strong> 위치 정보는 수집 목적 달성 후 즉시 파기하거나 개인을 알아볼 수 없도록 가명 처리하는 것을 원칙으로 합니다.</p>
+              <p><strong>사용자 권리</strong> 회원은 언제든지 위치 정보 수집 동의를 철회하거나 수집 일시 중지를 요청할 수 있습니다.</p>
+              <p><strong>현실 주의 의무</strong> 회원은 게임 이용 중 항상 주변 환경을 확인하고 본인의 안전을 확보할 책임이 있습니다.</p>
+              <p><strong>위법행위 금지</strong> 사유지 무단 침입, 군사시설 진입, 교통법규 위반 등 위법 행위를 해서는 안 되며, 법적 책임은 회원 본인에게 있습니다.</p>
+              <p><strong>면책</strong> 회사는 회원의 오프라인 활동 중 발생한 신체적 상해, 재산적 손해, 사망 사고에 대해 회사의 고의 또는 중대한 과실이 없는 한 책임을 지지 않습니다.</p>
+              <p><strong>데이터 무단 추출 금지</strong> 지도 데이터나 위치 좌표를 크롤링하여 대량으로 추출하는 행위를 금지합니다.</p>
+              <p><strong>외부 장애</strong> 위치 정보와 지도 데이터는 외부 API 및 GPS 신호에 의존하므로 외부 서비스 장애, 오차, 위성 신호 불량으로 인한 오작동에 대해 회사는 책임을 지지 않습니다.</p>
+              <p><strong>부정행위 금지</strong> 기기 위치를 위조·변조하거나 기술적 취약점을 악용해 비정상적인 위치를 전송하는 행위를 금지합니다.</p>
+              <p><strong>이용 제한</strong> 위반 시 사전 고지 없이 계정 일시 정지, 영구 정지, 데이터 초기화 및 랭킹 제외 조치를 할 수 있습니다.</p>
+              <p><strong>서비스 운영</strong> 회사는 보안, 안정성, 법령 준수를 위해 서비스 내용을 변경하거나 일시 중단할 수 있습니다.</p>
+            </div>
+          </details>
+          <label class="terms-check"><input id="termsAgreement" type="checkbox" /> <span>이용 약관과 위치 정보 수집·이용 안내에 동의합니다.</span></label>
+        </fieldset>
         <button id="authSubmit" class="primary-btn" type="submit">로그인</button>
       </form>
     </div>
@@ -37,7 +66,34 @@
   <main class="map-wrap" id="gameScreen" hidden>
     <div id="map"></div>
     <div id="gridStatus" class="grid-status" hidden></div>
-    <button id="locateButton" class="locate-button" type="button" title="내 위치로 이동">내 위치</button>
+    <aside class="account-panel" aria-label="계정 정보">
+      <button id="accountToggle" class="account-toggle" type="button" aria-expanded="false" title="계정 정보">계정</button>
+      <div id="accountBody" class="account-body" hidden>
+        <strong id="accountUsername">사용자</strong>
+        <span id="accountTeam">팀 정보 없음</span>
+        <button id="logoutButton" class="logout-button" type="button">로그아웃</button>
+      </div>
+    </aside>
+    <aside class="gps-debug-panel" aria-label="개발자용 위치 요청 상태">
+      <strong>위치 요청 상태</strong>
+      <p id="gpsDebugStatus">위치 요청 대기 중</p>
+      <p id="gpsDebugPosition">좌표 없음</p>
+      <p id="gpsDebugUpdated">갱신 시각 없음</p>
+      <p id="gpsDebugSuccessCount">위치 요청 성공 0회</p>
+    </aside>
+    <aside class="team-members-panel" aria-label="같은 팀 가입자">
+      <button id="teamMembersToggle" class="team-members-toggle" type="button" aria-expanded="true">
+        <strong id="teamMembersTitle">내 팀</strong>
+        <span aria-hidden="true">접기</span>
+      </button>
+      <div id="teamMembersBody">
+        <ul id="teamMembersList"></ul>
+      </div>
+    </aside>
+    <aside class="painted-tile-summary" aria-label="내가 칠한 타일">
+      <strong id="paintedTileCount">칠한 타일 0개</strong>
+      <ol id="paintedTileList"></ol>
+    </aside>
     <section class="test-controller" id="testController" aria-label="개발자용 테스트 컨트롤러">
       <div class="test-controller-header">
         <strong>테스트 컨트롤러</strong>
@@ -49,6 +105,8 @@
         <button type="button" data-mock-direction="down">하</button>
         <button type="button" data-mock-direction="right">우</button>
         <button id="autoMoveToggle" type="button">자동 이동 시작</button>
+        <button id="resetTilesButton" type="button">타일 초기화</button>
+        <button id="deleteAccountButton" type="button">개발자 계정 삭제</button>
       </div>
     </section>
     <aside class="location-history" aria-label="이동한 위치 기록">
