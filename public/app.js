@@ -888,6 +888,9 @@ function setPlayerPosition(map, lat, lng, shouldCenter = true, accuracy = null) 
   }
   if (shouldCenter) {
     map.setCenter(position);
+    if (!state.hasCenteredOnLocation) {
+      map.setLevel(MAX_CLAIMED_TILE_ZOOM_LEVEL);
+    }
   }
 
   syncPlayers();
