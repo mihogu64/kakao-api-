@@ -36,6 +36,7 @@ const state = {
   lastRecordedPosition: null,
   paintedGridIds: new Set(),
   paintedGridHistory: [],
+  pendingGridIds: new Set(),
   sharedTiles: new Map(),
   playerOverlays: new Map(),
   lastSyncedPosition: null,
@@ -403,20 +404,29 @@ async function syncLocationToServer(location, claimPoints = []) {
       }),
     });
     if (handleUnauthorized(response)) {
+      claimPoints.forEach((point) => state.pendingGridIds.delete(gridIdAt(point.latitude, point.longitude)));
       return;
     }
     if (!response.ok) {
+      claimPoints.forEach((point) => state.pendingGridIds.delete(gridIdAt(point.latitude, point.longitude)));
       return;
     }
     const payload = await response.json();
     (payload.tiles || (payload.tile ? [payload.tile] : [])).forEach((tile) => {
+      state.pendingGridIds.delete(tile.tileKey);
+      if (!state.paintedGridIds.has(tile.tileKey)) {
+        state.paintedGridIds.add(tile.tileKey);
+        state.paintedGridHistory.push(tile.tileKey);
+      }
       state.sharedTiles.set(tile.tileKey, tile);
     });
     if (payload.tiles?.length || payload.tile) {
+      localStorage.setItem(paintedGridStorageKey(), JSON.stringify(state.paintedGridHistory));
+      renderPaintedTileSummary();
       renderGrid(state.map);
     }
   } catch (error) {
-    // Location remains usable while the server is temporarily unavailable.
+    claimPoints.forEach((point) => state.pendingGridIds.delete(gridIdAt(point.latitude, point.longitude)));
   }
 }
 
@@ -812,17 +822,12 @@ function processLocation(position) {
   const routeTileIds = new Set();
   route.forEach((point) => {
     const tileId = gridIdAt(point.latitude, point.longitude);
-    if (!routeTileIds.has(tileId) && !state.paintedGridIds.has(tileId)) {
+    if (!routeTileIds.has(tileId) && !state.paintedGridIds.has(tileId) && !state.pendingGridIds.has(tileId)) {
       routeTileIds.add(tileId);
       newTiles.push(point);
-      state.paintedGridIds.add(tileId);
-      state.paintedGridHistory.push(tileId);
+      state.pendingGridIds.add(tileId);
     }
   });
-  if (newTiles.length) {
-    localStorage.setItem(paintedGridStorageKey(), JSON.stringify(state.paintedGridHistory));
-    renderPaintedTileSummary();
-  }
   syncLocationToServer(current, newTiles);
   if (claimable) {
     state.previousClaimLocation = current;
