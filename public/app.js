@@ -1,11 +1,9 @@
 const GRID_SIZE_DEGREES = 0.00009;
-const MAX_GRID_ZOOM_LEVEL = 15;
 const MAX_CLAIMED_TILE_ZOOM_LEVEL = 5;
-const LOCATION_MAX_ZOOM_LEVEL = 5;
 const LOCATION_RECENTER_IDLE_MS = 10000;
 const LOCATION_REQUEST_TIMEOUT_MS = 12000;
 const GPS_CONFIG = {
-  maxAccuracyForClaim: 250,
+  maxAccuracyForClaim: 500,
   maxJumpDistance: 500,
   maxSpeedMps: 70,
   maxDisplayJumpDistance: 1000,
@@ -34,20 +32,15 @@ const state = {
   hasCenteredOnLocation: false,
   lastMapInteractionAt: 0,
   lastRecordedPosition: null,
-  paintedGridIds: new Set(),
-  paintedGridHistory: [],
-  pendingGridIds: new Set(),
   sharedTiles: new Map(),
   playerOverlays: new Map(),
   lastSyncedPosition: null,
   lastServerTileResetAt: null,
-  teamMembersTimer: null,
   deleteMode: false,
   syncTimer: null,
   gridPolygons: [],
   renderTimer: null,
   playerPosition: null,
-  locationConfirmed: false,
   mockMode: false,
   autoMoveTimer: null,
   mockDirection: 'right',
@@ -308,47 +301,26 @@ function historyStorageKey() {
   return `territory.locationHistory.${state.username}`;
 }
 
-function paintedGridStorageKey() {
-  return `territory.paintedGrid.${state.username}`;
-}
-
-function loadPaintedGrid() {
-  try {
-    const savedGridIds = JSON.parse(localStorage.getItem(paintedGridStorageKey()) || '[]');
-    state.paintedGridHistory = Array.isArray(savedGridIds) ? savedGridIds : [];
-    state.paintedGridIds = new Set(state.paintedGridHistory);
-  } catch (error) {
-    state.paintedGridIds = new Set();
-    state.paintedGridHistory = [];
-  }
-  renderPaintedTileSummary();
-}
-
-function gridCoordinates(gridId) {
-  const [gridX, gridY] = gridId.split(':').map(Number);
-  return {
-    gridX,
-    gridY,
-    lat: (gridY + 0.5) * GRID_SIZE_DEGREES,
-    lng: (gridX + 0.5) * GRID_SIZE_DEGREES,
-  };
-}
-
 function renderPaintedTileSummary() {
-  els.paintedTileCount.textContent = `칠한 타일 ${state.paintedGridIds.size}개`;
+  const paintedTiles = Array.from(state.sharedTiles.values())
+    .filter((tile) => tile.ownerUserId === state.userId);
+  els.paintedTileCount.textContent = `칠한 타일 ${paintedTiles.length}개`;
   els.paintedTileList.innerHTML = '';
-  state.paintedGridHistory.slice(-5).reverse().forEach((gridId) => {
-    const tile = gridCoordinates(gridId);
+  paintedTiles.slice(-5).reverse().forEach((tile) => {
+    const coordinates = {
+      lat: tile.centerLat || (tile.south + tile.north) / 2,
+      lng: tile.centerLng || (tile.west + tile.east) / 2,
+    };
     const item = document.createElement('li');
-    const coordinates = document.createElement('span');
-    coordinates.textContent = `${tile.lat.toFixed(6)}, ${tile.lng.toFixed(6)}`;
+    const coordinateText = document.createElement('span');
+    coordinateText.textContent = `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}`;
     const moveButton = document.createElement('button');
     moveButton.type = 'button';
     moveButton.className = 'tile-jump-button';
     moveButton.textContent = '이동';
     moveButton.title = '이 좌표로 지도 이동';
-    moveButton.addEventListener('click', () => moveMapToTile(tile));
-    item.append(coordinates, moveButton);
+    moveButton.addEventListener('click', () => moveMapToTile(coordinates));
+    item.append(coordinateText, moveButton);
     els.paintedTileList.appendChild(item);
   });
 }
@@ -404,29 +376,21 @@ async function syncLocationToServer(location, claimPoints = []) {
       }),
     });
     if (handleUnauthorized(response)) {
-      claimPoints.forEach((point) => state.pendingGridIds.delete(gridIdAt(point.latitude, point.longitude)));
       return;
     }
     if (!response.ok) {
-      claimPoints.forEach((point) => state.pendingGridIds.delete(gridIdAt(point.latitude, point.longitude)));
       return;
     }
     const payload = await response.json();
     (payload.tiles || (payload.tile ? [payload.tile] : [])).forEach((tile) => {
-      state.pendingGridIds.delete(tile.tileKey);
-      if (!state.paintedGridIds.has(tile.tileKey)) {
-        state.paintedGridIds.add(tile.tileKey);
-        state.paintedGridHistory.push(tile.tileKey);
-      }
       state.sharedTiles.set(tile.tileKey, tile);
     });
     if (payload.tiles?.length || payload.tile) {
-      localStorage.setItem(paintedGridStorageKey(), JSON.stringify(state.paintedGridHistory));
       renderPaintedTileSummary();
       renderGrid(state.map);
     }
   } catch (error) {
-    claimPoints.forEach((point) => state.pendingGridIds.delete(gridIdAt(point.latitude, point.longitude)));
+    return;
   }
 }
 
@@ -557,6 +521,7 @@ async function syncSharedTiles() {
     payload.tiles
       .filter((tile) => tile.ownerUserId)
       .forEach((tile) => state.sharedTiles.set(tile.tileKey, tile));
+    renderPaintedTileSummary();
     renderGrid(state.map);
   } catch (error) {
     // A temporary polling failure should not stop the map.
@@ -564,20 +529,12 @@ async function syncSharedTiles() {
 }
 
 function applyServerTileReset(resetAt) {
-  const savedResetAt = localStorage.getItem('territory.tileResetAt') || null;
-  if (resetAt === savedResetAt) {
+  if (resetAt === state.lastServerTileResetAt) {
     return;
   }
 
   state.lastServerTileResetAt = resetAt;
-  state.paintedGridIds.clear();
-  state.paintedGridHistory = [];
-  localStorage.removeItem(paintedGridStorageKey());
-  if (resetAt) {
-    localStorage.setItem('territory.tileResetAt', resetAt);
-  } else {
-    localStorage.removeItem('territory.tileResetAt');
-  }
+  state.sharedTiles.clear();
   renderPaintedTileSummary();
 }
 
@@ -804,7 +761,6 @@ function processLocation(position) {
   }
 
   updateGpsDebug('위치 수신 중', position);
-  state.locationConfirmed = true;
   const hasBeenIdle = Date.now() - state.lastMapInteractionAt >= LOCATION_RECENTER_IDLE_MS;
   const shouldCenter = !state.hasCenteredOnLocation || state.centerOnNextLocation || hasBeenIdle;
   state.centerOnNextLocation = false;
@@ -822,10 +778,9 @@ function processLocation(position) {
   const routeTileIds = new Set();
   route.forEach((point) => {
     const tileId = gridIdAt(point.latitude, point.longitude);
-    if (!routeTileIds.has(tileId) && !state.paintedGridIds.has(tileId) && !state.pendingGridIds.has(tileId)) {
+    if (!routeTileIds.has(tileId)) {
       routeTileIds.add(tileId);
       newTiles.push(point);
-      state.pendingGridIds.add(tileId);
     }
   });
   syncLocationToServer(current, newTiles);
@@ -1067,7 +1022,7 @@ function initMap() {
   }
 
   kakao.maps.load(() => {
-    loadPaintedGrid();
+    renderPaintedTileSummary();
     state.map = new kakao.maps.Map(document.getElementById('map'), {
       center: new kakao.maps.LatLng(INITIAL_MAP_CENTER.lat, INITIAL_MAP_CENTER.lng),
       level: 13,
