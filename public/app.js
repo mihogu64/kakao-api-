@@ -59,8 +59,6 @@ const els = {
   authForm: document.getElementById('authForm'),
   authUsername: document.getElementById('authUsername'),
   authPassword: document.getElementById('authPassword'),
-  authEmail: document.getElementById('authEmail'),
-  emailField: document.getElementById('emailField'),
   authSubmit: document.getElementById('authSubmit'),
   authMessage: document.getElementById('authMessage'),
   teamSelection: document.getElementById('teamSelection'),
@@ -164,8 +162,6 @@ function setAuthMode(mode) {
   els.authDescription.textContent = isLogin ? '당신이 지나간 곳이 팀의 영역이 됩니다.' : '닉네임과 비밀번호로 세력에 합류하세요.';
   els.authSubmit.textContent = isLogin ? '로그인' : '회원가입';
   els.authPassword.autocomplete = isLogin ? 'current-password' : 'new-password';
-  els.emailField.hidden = isLogin;
-  els.authEmail.required = !isLogin;
   els.teamSelection.hidden = isLogin;
   els.termsField.hidden = isLogin;
   els.termsAgreement.required = !isLogin;
@@ -227,10 +223,6 @@ async function submitAuth(event) {
       setAuthMessage(credentialError);
       return;
     }
-    if (!els.authEmail.value.trim()) {
-      setAuthMessage('이메일을 입력하세요.');
-      return;
-    }
     if (!els.termsAgreement.checked) {
       setAuthMessage('이용 약관과 위치 정보 안내에 동의하세요.');
       return;
@@ -244,7 +236,7 @@ async function submitAuth(event) {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, email: els.authEmail.value.trim(), teamId: state.selectedTeamId }),
+      body: JSON.stringify({ username, password, teamId: state.selectedTeamId }),
     });
     const payload = await response.json();
     if (!response.ok) {
