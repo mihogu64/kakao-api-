@@ -128,6 +128,13 @@ function describeLocationError(error) {
   return reasons[error.code] || `알 수 없는 오류 ${error.code}`;
 }
 
+function formatShieldRemaining(remainingMs) {
+  const totalMinutes = Math.max(1, Math.ceil(remainingMs / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours ? `${hours}시간 ${minutes}분` : `${minutes}분`;
+}
+
 function hasForbiddenCredentialSequence(value) {
   const normalized = value.toLowerCase();
   const sequences = ['0123', '1234', '2345', '3456', '4567', '5678', '6789', 'abcd', 'bcde', 'cdef', 'qwer', 'wert', 'erty', 'qwerty'];
@@ -380,6 +387,9 @@ async function syncLocationToServer(location, claimPoints = []) {
     if (payload.tiles?.length || payload.tile) {
       renderPaintedTileSummary();
       renderGrid(state.map);
+    }
+    if (payload.blockedTiles?.length) {
+      updateGpsDebug(`보호막으로 점령 불가 · ${formatShieldRemaining(payload.blockedTiles[0].remainingMs)} 후 가능`);
     }
   } catch (error) {
     return;

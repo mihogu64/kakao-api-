@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'state.json');
 const GRID_SIZE_DEGREES = 0.00009;
-const SHIELD_MS = 90 * 60 * 1000;
+const SHIELD_MS = 5 * 60 * 60 * 1000;
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const TEAM_BALANCE_LIMIT = 5;
 
@@ -653,6 +653,7 @@ function handleCapture(req, res) {
       user.lastSeenAt = nowIso();
 
       const capturedTiles = [];
+      const blockedTiles = [];
       const capturedTileKeys = new Set();
       points.forEach((point) => {
         if (typeof point.lat !== 'number' || typeof point.lng !== 'number') {
@@ -664,6 +665,20 @@ function handleCapture(req, res) {
         }
         capturedTileKeys.add(tile.tileKey);
         const record = getTileRecord(seasonKey, tile.tileKey, tile);
+        const shieldExpiresAt = record.shieldExpiresAt ? new Date(record.shieldExpiresAt).getTime() : 0;
+        const isOwnedByOtherTeam = record.ownerTeamId && record.ownerTeamId !== team?.id;
+        if (isOwnedByOtherTeam && shieldExpiresAt > Date.now()) {
+          blockedTiles.push({
+            tileKey: record.tileKey,
+            ownerTeamId: record.ownerTeamId,
+            shieldExpiresAt: record.shieldExpiresAt,
+            remainingMs: shieldExpiresAt - Date.now(),
+          });
+          return;
+        }
+        if (record.ownerTeamId === team?.id) {
+          return;
+        }
         record.ownerTeamId = team ? team.id : null;
         record.ownerUserId = authUser.id;
         record.claimedAt = nowIso();
@@ -685,6 +700,7 @@ function handleCapture(req, res) {
         seasonKey,
         tile: capturedTiles[capturedTiles.length - 1] || null,
         tiles: capturedTiles,
+        blockedTiles,
       });
     })
     .catch((error) => {
