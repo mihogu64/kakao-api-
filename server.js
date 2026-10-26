@@ -99,6 +99,10 @@ function loadPersistentState() {
     });
     (snapshot.tiles || []).forEach((tile) => {
       tile.ownerTeamId = legacyTeamIds[tile.ownerTeamId] || tile.ownerTeamId;
+      const claimedAt = tile.claimedAt ? new Date(tile.claimedAt).getTime() : 0;
+      if (claimedAt) {
+        tile.shieldExpiresAt = new Date(claimedAt + SHIELD_MS).toISOString();
+      }
       state.tiles.set(`${tile.seasonKey}:${tile.tileKey}`, tile);
     });
     (snapshot.seasons || []).forEach((season) => state.seasons.set(season.seasonKey, season));
