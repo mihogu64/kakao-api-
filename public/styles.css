@@ -475,6 +475,36 @@ body {
   margin: 0;
 }
 
+.tile-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  z-index: 40;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 16px;
+  border: 1px solid rgba(20, 35, 52, 0.18);
+  border-radius: 999px;
+  color: #17324a;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.tile-toast.success {
+  color: #12663c;
+  border-color: rgba(18, 102, 60, 0.3);
+  background: #effcf4;
+}
+
+.tile-toast.error {
+  color: #a33a32;
+  border-color: rgba(163, 58, 50, 0.3);
+  background: #fff3f1;
+}
+
 .gps-status-card strong {
   margin-bottom: 5px;
   font-size: 13px;
@@ -1261,5 +1291,9 @@ body {
     left: 12px;
     bottom: 12px;
     width: 205px;
+  }
+
+  .tile-toast {
+    bottom: 18px;
   }
 }

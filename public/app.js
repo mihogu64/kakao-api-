@@ -68,6 +68,7 @@ const els = {
   loginTab: document.getElementById('loginTab'),
   signupTab: document.getElementById('signupTab'),
   locationHistoryList: document.getElementById('locationHistoryList'),
+  tileToast: document.getElementById('tileToast'),
   gridStatus: document.getElementById('gridStatus'),
   gpsStatusCard: document.getElementById('gpsStatusCard'),
   gpsDebugStatus: document.getElementById('gpsDebugStatus'),
@@ -87,6 +88,18 @@ const els = {
   teamMembersBody: document.getElementById('teamMembersBody'),
   teamMembersList: document.getElementById('teamMembersList'),
 };
+
+let tileToastTimer = null;
+
+function showTileToast(message, tone = 'info') {
+  window.clearTimeout(tileToastTimer);
+  els.tileToast.textContent = message;
+  els.tileToast.className = `tile-toast ${tone}`;
+  els.tileToast.hidden = false;
+  tileToastTimer = window.setTimeout(() => {
+    els.tileToast.hidden = true;
+  }, 4000);
+}
 
 function setAuthMessage(message, isError = true) {
   els.authMessage.textContent = message;
@@ -386,6 +399,10 @@ async function syncLocationToServer(location, claimPoints = []) {
       return;
     }
     if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      if (claimPoints.length) {
+        showTileToast(payload.message || '타일을 점령하지 못했습니다.', 'error');
+      }
       return;
     }
     const payload = await response.json();
@@ -395,11 +412,17 @@ async function syncLocationToServer(location, claimPoints = []) {
     if (payload.tiles?.length || payload.tile) {
       renderPaintedTileSummary();
       renderGrid(state.map);
+      showTileToast(`타일 ${payload.tiles?.length || 1}개 점령 완료 · 5시간 보호`, 'success');
     }
     if (payload.blockedTiles?.length) {
-      updateGpsDebug(`보호막으로 점령 불가 · ${formatShieldRemaining(payload.blockedTiles[0].remainingMs)} 후 가능`);
+      const remaining = formatShieldRemaining(payload.blockedTiles[0].remainingMs);
+      updateGpsDebug(`보호막으로 점령 불가 · ${remaining} 후 가능`);
+      showTileToast(`보호막으로 점령 불가 · ${remaining} 후 가능`, 'error');
     }
   } catch (error) {
+    if (claimPoints.length) {
+      showTileToast('네트워크 오류로 타일을 점령하지 못했습니다.', 'error');
+    }
     return;
   }
 }
