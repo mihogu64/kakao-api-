@@ -3,7 +3,7 @@ const MAX_CLAIMED_TILE_ZOOM_LEVEL = 5;
 const LOCATION_RECENTER_IDLE_MS = 10000;
 const LOCATION_REQUEST_TIMEOUT_MS = 12000;
 const GPS_CONFIG = {
-  maxAccuracyForClaim: 500,
+  maxAccuracyForClaim: 300,
   maxJumpDistance: 500,
   maxSpeedMps: 70,
   maxDisplayJumpDistance: 1000,
