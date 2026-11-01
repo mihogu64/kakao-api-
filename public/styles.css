@@ -453,7 +453,7 @@ body {
   height: 100vh;
 }
 
-.gps-debug-panel {
+.gps-status-card {
   position: absolute;
   left: 18px;
   bottom: 18px;
@@ -468,19 +468,39 @@ body {
   font-size: 12px;
 }
 
-.gps-debug-panel strong,
-.gps-debug-panel p {
+.gps-status-card strong,
+.gps-status-card p,
+.gps-status-card small {
   display: block;
   margin: 0;
 }
 
-.gps-debug-panel strong {
+.gps-status-card strong {
   margin-bottom: 5px;
   font-size: 13px;
 }
 
-.gps-debug-panel p + p {
+.gps-status-card p + p {
   margin-top: 3px;
+}
+
+.gps-status-card p:first-of-type {
+  color: #536b80;
+  font-weight: 700;
+}
+
+.gps-status-card.ready p:first-of-type {
+  color: #16834b;
+}
+
+.gps-status-card.warning p:first-of-type {
+  color: #b85b00;
+}
+
+.gps-status-card small {
+  margin-top: 8px;
+  color: #718496;
+  font-size: 11px;
 }
 
 .team-members-panel {
@@ -1159,7 +1179,7 @@ body {
   background: #ffffff;
 }
 
-.gps-debug-panel,
+.gps-status-card,
 .team-members-panel,
 .painted-tile-summary,
 .account-body,
@@ -1186,7 +1206,7 @@ body {
   min-width: 190px;
 }
 
-.gps-debug-panel strong,
+.gps-status-card strong,
 .team-members-panel strong,
 .painted-tile-summary strong {
   color: var(--ink);
@@ -1237,7 +1257,7 @@ body {
     width: 180px;
   }
 
-  .gps-debug-panel {
+  .gps-status-card {
     left: 12px;
     bottom: 12px;
     width: 205px;

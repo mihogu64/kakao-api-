@@ -69,10 +69,10 @@ const els = {
   signupTab: document.getElementById('signupTab'),
   locationHistoryList: document.getElementById('locationHistoryList'),
   gridStatus: document.getElementById('gridStatus'),
+  gpsStatusCard: document.getElementById('gpsStatusCard'),
   gpsDebugStatus: document.getElementById('gpsDebugStatus'),
   gpsDebugPosition: document.getElementById('gpsDebugPosition'),
   gpsDebugUpdated: document.getElementById('gpsDebugUpdated'),
-  gpsDebugSuccessCount: document.getElementById('gpsDebugSuccessCount'),
   testController: document.getElementById('testController'),
   testModeToggle: document.getElementById('testModeToggle'),
   testControllerControls: document.querySelector('.test-controller-controls'),
@@ -111,11 +111,17 @@ function logout() {
 
 function updateGpsDebug(status, position = null) {
   els.gpsDebugStatus.textContent = status;
+  const tone = status.includes('점령 가능') || status.includes('위치 수신 중')
+    ? 'ready'
+    : status.includes('실패') || status.includes('오류') || status.includes('보류') || status.includes('보호막')
+      ? 'warning'
+      : 'waiting';
+  els.gpsStatusCard.className = `gps-status-card ${tone}`;
   if (position) {
     state.locationSuccessCount += 1;
-    els.gpsDebugPosition.textContent = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)} (${Math.round(position.coords.accuracy || 0)}m)`;
+    const accuracy = Number.isFinite(position.coords.accuracy) ? Math.round(position.coords.accuracy) : null;
+    els.gpsDebugPosition.textContent = accuracy === null ? '정확도 확인 불가' : `현재 정확도 ${accuracy}m`;
     els.gpsDebugUpdated.textContent = `마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`;
-    els.gpsDebugSuccessCount.textContent = `위치 요청 성공 ${state.locationSuccessCount}회`;
   }
 }
 
@@ -775,6 +781,9 @@ function processLocation(position) {
 
   const suspicious = isSuspiciousLocation(state.previousLocation, current);
   const claimable = !suspicious && (current.accuracy === null || current.accuracy <= GPS_CONFIG.maxAccuracyForClaim);
+  if (claimable) {
+    updateGpsDebug('점령 가능', position);
+  }
   let route = claimable ? interpolateRoute(state.previousClaimLocation, current) : [];
   const newTiles = [];
   const routeTileIds = new Set();
@@ -790,7 +799,7 @@ function processLocation(position) {
     state.previousClaimLocation = current;
   } else {
     state.previousClaimLocation = null;
-    updateGpsDebug(displayOutlier ? '위치 튐 의심 · 화면/타일 갱신 보류' : '위치 표시됨 · 타일 점령 보류');
+    updateGpsDebug(displayOutlier ? '위치 튐 의심 · 점령 보류' : 'GPS 정확도 부족 · 점령 보류');
   }
   state.previousLocation = current;
 }
