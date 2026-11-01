@@ -73,6 +73,7 @@ const els = {
   gpsDebugStatus: document.getElementById('gpsDebugStatus'),
   gpsDebugPosition: document.getElementById('gpsDebugPosition'),
   gpsDebugUpdated: document.getElementById('gpsDebugUpdated'),
+  gpsAccuracyHint: document.getElementById('gpsAccuracyHint'),
   testController: document.getElementById('testController'),
   testModeToggle: document.getElementById('testModeToggle'),
   testControllerControls: document.querySelector('.test-controller-controls'),
@@ -122,6 +123,7 @@ function updateGpsDebug(status, position = null) {
     const accuracy = Number.isFinite(position.coords.accuracy) ? Math.round(position.coords.accuracy) : null;
     els.gpsDebugPosition.textContent = accuracy === null ? '정확도 확인 불가' : `현재 정확도 ${accuracy}m`;
     els.gpsDebugUpdated.textContent = `마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`;
+    els.gpsAccuracyHint.hidden = accuracy === null || accuracy <= GPS_CONFIG.maxAccuracyForClaim;
   }
 }
 
