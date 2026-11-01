@@ -70,6 +70,8 @@ const els = {
   locationHistoryList: document.getElementById('locationHistoryList'),
   tileToast: document.getElementById('tileToast'),
   gridStatus: document.getElementById('gridStatus'),
+  leaderboardList: document.getElementById('leaderboardList'),
+  leaderboardUpdated: document.getElementById('leaderboardUpdated'),
   gpsStatusCard: document.getElementById('gpsStatusCard'),
   gpsDebugStatus: document.getElementById('gpsDebugStatus'),
   gpsDebugPosition: document.getElementById('gpsDebugPosition'),
@@ -517,6 +519,34 @@ async function syncTeamMembers() {
     });
   } catch (error) {
     // Team member polling can recover on the next interval.
+  }
+}
+
+async function syncLeaderboard() {
+  try {
+    const response = await fetch('/api/state', { headers: authHeaders() });
+    if (handleUnauthorized(response) || !response.ok) {
+      return;
+    }
+    const payload = await response.json();
+    els.leaderboardList.innerHTML = '';
+    payload.leaderboard.forEach((team, index) => {
+      const item = document.createElement('li');
+      const name = document.createElement('span');
+      name.className = 'leaderboard-team-name';
+      name.textContent = team.name;
+      name.style.color = team.color;
+      const score = document.createElement('span');
+      score.textContent = `${team.tiles}칸`;
+      if (team.id === state.teamId) {
+        item.classList.add('current-team');
+      }
+      item.append(name, score);
+      els.leaderboardList.appendChild(item);
+    });
+    els.leaderboardUpdated.textContent = `마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`;
+  } catch (error) {
+    // Leaderboard polling can recover on the next interval.
   }
 }
 
@@ -1083,10 +1113,12 @@ function initMap() {
     startLocationWatch(state.map);
     syncPlayers();
     syncTeamMembers();
+    syncLeaderboard();
     syncSharedTiles();
     state.syncTimer = window.setInterval(() => {
       syncPlayers();
       syncTeamMembers();
+      syncLeaderboard();
       syncSharedTiles();
     }, 5000);
   });
