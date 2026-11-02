@@ -55,6 +55,11 @@ const els = {
   accountBody: document.getElementById('accountBody'),
   accountUsername: document.getElementById('accountUsername'),
   accountTeam: document.getElementById('accountTeam'),
+  settingsButton: document.getElementById('settingsButton'),
+  settingsModal: document.getElementById('settingsModal'),
+  settingsCloseButton: document.getElementById('settingsCloseButton'),
+  locationTrackingToggle: document.getElementById('locationTrackingToggle'),
+  fullscreenButton: document.getElementById('fullscreenButton'),
   logoutButton: document.getElementById('logoutButton'),
   authForm: document.getElementById('authForm'),
   authUsername: document.getElementById('authUsername'),
@@ -77,6 +82,8 @@ const els = {
   gpsDebugPosition: document.getElementById('gpsDebugPosition'),
   gpsDebugUpdated: document.getElementById('gpsDebugUpdated'),
   gpsAccuracyHint: document.getElementById('gpsAccuracyHint'),
+  gpsStatusToggle: document.getElementById('gpsStatusToggle'),
+  gpsStatusBody: document.getElementById('gpsStatusBody'),
   paintedTileCount: document.getElementById('paintedTileCount'),
   paintedTileList: document.getElementById('paintedTileList'),
   teamMembersTitle: document.getElementById('teamMembersTitle'),
@@ -113,6 +120,46 @@ function toggleAccountPanel() {
   const expanded = els.accountToggle.getAttribute('aria-expanded') === 'true';
   els.accountToggle.setAttribute('aria-expanded', String(!expanded));
   els.accountBody.hidden = expanded;
+}
+
+function toggleGpsStatus() {
+  const expanded = els.gpsStatusToggle.getAttribute('aria-expanded') === 'true';
+  els.gpsStatusToggle.setAttribute('aria-expanded', String(!expanded));
+  els.gpsStatusBody.hidden = expanded;
+  els.gpsStatusToggle.querySelector('span').textContent = expanded ? '펼치기' : '접기';
+}
+
+function openSettings() {
+  els.settingsModal.hidden = false;
+  els.accountBody.hidden = true;
+  els.accountToggle.setAttribute('aria-expanded', 'false');
+}
+
+function closeSettings() {
+  els.settingsModal.hidden = true;
+}
+
+function setLocationTracking(enabled) {
+  localStorage.setItem('territory.locationTracking', String(enabled));
+  if (enabled) {
+    startLocationWatch(state.map);
+    requestCurrentLocation(state.map);
+    updateGpsDebug('현재 위치 요청 중');
+  } else {
+    if (state.watchId !== null) {
+      navigator.geolocation.clearWatch(state.watchId);
+      state.watchId = null;
+    }
+    updateGpsDebug('위치 정보 수집 중지');
+  }
+}
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+    return;
+  }
+  els.gameScreen.requestFullscreen?.();
 }
 
 function logout() {
@@ -1055,6 +1102,9 @@ function updateCurrentLocation(map, position) {
 }
 
 function requestCurrentLocation(map) {
+  if (localStorage.getItem('territory.locationTracking') === 'false') {
+    return;
+  }
   if (navigator.geolocation) {
     updateGpsDebug('현재 위치 요청 중');
     navigator.geolocation.getCurrentPosition((position) => updateCurrentLocation(map, position), (error) => {
@@ -1068,6 +1118,9 @@ function requestCurrentLocation(map) {
 }
 
 function startLocationWatch(map) {
+  if (localStorage.getItem('territory.locationTracking') === 'false') {
+    return;
+  }
   if (!navigator.geolocation || state.watchId !== null) {
     if (!navigator.geolocation) {
       updateGpsDebug('이 브라우저는 위치 기능을 지원하지 않음');
@@ -1132,12 +1185,12 @@ els.loginTab.addEventListener('click', () => setAuthMode('login'));
 els.signupTab.addEventListener('click', () => setAuthMode('signup'));
 els.authForm.addEventListener('submit', submitAuth);
 els.accountToggle.addEventListener('click', toggleAccountPanel);
+els.settingsButton.addEventListener('click', openSettings);
+els.settingsCloseButton.addEventListener('click', closeSettings);
+els.locationTrackingToggle.addEventListener('change', (event) => setLocationTracking(event.target.checked));
+els.fullscreenButton.addEventListener('click', toggleFullscreen);
+els.gpsStatusToggle.addEventListener('click', toggleGpsStatus);
 els.logoutButton.addEventListener('click', logout);
 els.teamMembersToggle.addEventListener('click', toggleTeamMembers);
-document.querySelectorAll('[data-mock-direction]').forEach((button) => {
-  button.addEventListener('click', () => {
-    state.mockDirection = button.dataset.mockDirection;
-    moveMockPlayer(state.mockDirection);
-  });
-});
+els.locationTrackingToggle.checked = localStorage.getItem('territory.locationTracking') !== 'false';
 restoreSession();

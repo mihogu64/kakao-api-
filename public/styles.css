@@ -455,8 +455,8 @@ body {
 
 .leaderboard-panel {
   position: absolute;
-  left: 18px;
-  top: 18px;
+  right: 18px;
+  bottom: 18px;
   z-index: 20;
   width: min(210px, calc(100vw - 36px));
   padding: 12px;
@@ -522,6 +522,25 @@ body {
 .gps-status-card small {
   display: block;
   margin: 0;
+}
+
+.gps-status-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gps-status-toggle span {
+  color: #64748b;
+  font-size: 11px;
 }
 
 .gps-painted-summary {
@@ -737,7 +756,7 @@ body {
 
 .account-panel {
   position: absolute;
-  right: 18px;
+  right: 70px;
   top: 18px;
   z-index: 10;
 }
@@ -785,6 +804,87 @@ body {
   font: inherit;
   font-size: 12px;
   cursor: pointer;
+}
+
+.settings-button,
+.settings-action-button {
+  padding: 6px 8px;
+  border: 1px solid #c7d2de;
+  border-radius: 5px;
+  color: #17324a;
+  background: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.settings-button:hover,
+.settings-action-button:hover {
+  background: #edf4f9;
+}
+
+.settings-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(3, 12, 22, 0.35);
+}
+
+.settings-dialog {
+  width: min(360px, 100%);
+  padding: 18px;
+  border: 1px solid rgba(20, 35, 52, 0.18);
+  border-radius: 12px;
+  color: #17324a;
+  background: #ffffff;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.settings-close-button {
+  border: 0;
+  color: #64748b;
+  background: transparent;
+  cursor: pointer;
+}
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid #e6edf2;
+}
+
+.settings-option strong,
+.settings-option small {
+  display: block;
+}
+
+.settings-option small {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.settings-action-button {
+  width: 100%;
+  margin-top: 10px;
 }
 
 .logout-button:hover {
@@ -1378,9 +1478,13 @@ body {
   }
 
   .leaderboard-panel {
-    left: 12px;
-    top: 12px;
+    right: 12px;
+    bottom: 12px;
     width: 180px;
+  }
+
+  .account-panel {
+    right: 62px;
   }
 
   .tile-toast {

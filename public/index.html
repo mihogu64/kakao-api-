@@ -72,18 +72,24 @@
       <div id="accountBody" class="account-body" hidden>
         <strong id="accountUsername">사용자</strong>
         <span id="accountTeam">팀 정보 없음</span>
+        <button id="settingsButton" class="settings-button" type="button">설정</button>
         <button id="logoutButton" class="logout-button" type="button">로그아웃</button>
       </div>
     </aside>
     <aside class="gps-status-card" id="gpsStatusCard" aria-label="현재 위치 상태">
-      <strong>현재 위치 상태</strong>
-      <p id="gpsDebugStatus">위치 요청 대기 중</p>
-      <p id="gpsDebugPosition">정확도 확인 전</p>
-      <p id="gpsDebugUpdated">갱신 시각 없음</p>
-      <small id="gpsAccuracyHint" hidden>실외에서 사용하면 GPS 정확도가 좋아집니다.</small>
-      <div class="gps-painted-summary">
-        <strong id="paintedTileCount">칠한 타일 0개</strong>
-        <ol id="paintedTileList"></ol>
+      <button id="gpsStatusToggle" class="gps-status-toggle" type="button" aria-expanded="true">
+        <strong>현재 위치 상태</strong>
+        <span>접기</span>
+      </button>
+      <div id="gpsStatusBody">
+        <p id="gpsDebugStatus">위치 요청 대기 중</p>
+        <p id="gpsDebugPosition">정확도 확인 전</p>
+        <p id="gpsDebugUpdated">갱신 시각 없음</p>
+        <small id="gpsAccuracyHint" hidden>실외에서 사용하면 GPS 정확도가 좋아집니다.</small>
+        <div class="gps-painted-summary">
+          <strong id="paintedTileCount">칠한 타일 0개</strong>
+          <ol id="paintedTileList"></ol>
+        </div>
       </div>
     </aside>
     <aside class="team-members-panel" aria-label="같은 팀 가입자">
@@ -101,6 +107,22 @@
       <ol id="locationHistoryList"></ol>
     </aside>
     <div id="tileToast" class="tile-toast" role="status" aria-live="polite" hidden></div>
+    <section id="settingsModal" class="settings-modal" hidden aria-labelledby="settingsTitle">
+      <div class="settings-dialog" role="dialog" aria-modal="true">
+        <div class="settings-header">
+          <h2 id="settingsTitle">설정</h2>
+          <button id="settingsCloseButton" class="settings-close-button" type="button" aria-label="설정 닫기">닫기</button>
+        </div>
+        <label class="settings-option">
+          <span>
+            <strong>위치 정보 수집</strong>
+            <small>이동한 위치를 기록하고 타일을 점령합니다.</small>
+          </span>
+          <input id="locationTrackingToggle" type="checkbox" checked />
+        </label>
+        <button id="fullscreenButton" class="settings-action-button" type="button">전체 화면</button>
+      </div>
+    </section>
   </main>
 
   <script src="/kakao-sdk.js?appkey=7942bb209f76e0bd9750b522509ba91f&autoload=false"></script>
