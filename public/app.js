@@ -77,12 +77,6 @@ const els = {
   gpsDebugPosition: document.getElementById('gpsDebugPosition'),
   gpsDebugUpdated: document.getElementById('gpsDebugUpdated'),
   gpsAccuracyHint: document.getElementById('gpsAccuracyHint'),
-  testController: document.getElementById('testController'),
-  testModeToggle: document.getElementById('testModeToggle'),
-  testControllerControls: document.querySelector('.test-controller-controls'),
-  autoMoveToggle: document.getElementById('autoMoveToggle'),
-  resetTilesButton: document.getElementById('resetTilesButton'),
-  deleteAccountButton: document.getElementById('deleteAccountButton'),
   paintedTileCount: document.getElementById('paintedTileCount'),
   paintedTileList: document.getElementById('paintedTileList'),
   teamMembersTitle: document.getElementById('teamMembersTitle'),
@@ -329,7 +323,7 @@ function renderPaintedTileSummary() {
     .filter((tile) => tile.ownerUserId === state.userId);
   els.paintedTileCount.textContent = `칠한 타일 ${paintedTiles.length}개`;
   els.paintedTileList.innerHTML = '';
-  paintedTiles.slice(-5).reverse().forEach((tile) => {
+  paintedTiles.slice(-3).reverse().forEach((tile) => {
     const coordinates = {
       lat: tile.centerLat || (tile.south + tile.north) / 2,
       lng: tile.centerLng || (tile.west + tile.east) / 2,
@@ -685,7 +679,7 @@ function loadLocationHistory() {
     history = [];
   }
   els.locationHistoryList.innerHTML = '';
-  history.forEach((location) => {
+  history.slice(0, 3).forEach((location) => {
     const latitude = Number(location.lat ?? location.latitude);
     const longitude = Number(location.lng ?? location.longitude);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
@@ -1139,16 +1133,6 @@ els.signupTab.addEventListener('click', () => setAuthMode('signup'));
 els.authForm.addEventListener('submit', submitAuth);
 els.accountToggle.addEventListener('click', toggleAccountPanel);
 els.logoutButton.addEventListener('click', logout);
-els.testModeToggle.addEventListener('click', () => {
-  if (state.mockMode) {
-    exitMockMode();
-  } else {
-    enterMockMode();
-  }
-});
-els.autoMoveToggle.addEventListener('click', toggleAutoMove);
-els.resetTilesButton.addEventListener('click', resetTilesForDevelopment);
-els.deleteAccountButton.addEventListener('click', toggleDeleteMode);
 els.teamMembersToggle.addEventListener('click', toggleTeamMembers);
 document.querySelectorAll('[data-mock-direction]').forEach((button) => {
   button.addEventListener('click', () => {

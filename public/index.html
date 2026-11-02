@@ -81,6 +81,10 @@
       <p id="gpsDebugPosition">정확도 확인 전</p>
       <p id="gpsDebugUpdated">갱신 시각 없음</p>
       <small id="gpsAccuracyHint" hidden>실외에서 사용하면 GPS 정확도가 좋아집니다.</small>
+      <div class="gps-painted-summary">
+        <strong id="paintedTileCount">칠한 타일 0개</strong>
+        <ol id="paintedTileList"></ol>
+      </div>
     </aside>
     <aside class="team-members-panel" aria-label="같은 팀 가입자">
       <button id="teamMembersToggle" class="team-members-toggle" type="button" aria-expanded="true">
@@ -92,25 +96,6 @@
         <ul id="teamMembersList"></ul>
       </div>
     </aside>
-    <aside class="painted-tile-summary" aria-label="내가 칠한 타일">
-      <strong id="paintedTileCount">칠한 타일 0개</strong>
-      <ol id="paintedTileList"></ol>
-    </aside>
-    <section class="test-controller" id="testController" aria-label="개발자용 테스트 컨트롤러">
-      <div class="test-controller-header">
-        <strong>테스트 컨트롤러</strong>
-        <button id="testModeToggle" type="button">테스트 모드 켜기</button>
-      </div>
-      <div class="test-controller-controls" hidden>
-        <button type="button" data-mock-direction="up">상</button>
-        <button type="button" data-mock-direction="left">좌</button>
-        <button type="button" data-mock-direction="down">하</button>
-        <button type="button" data-mock-direction="right">우</button>
-        <button id="autoMoveToggle" type="button">자동 이동 시작</button>
-        <button id="resetTilesButton" type="button">타일 초기화</button>
-        <button id="deleteAccountButton" type="button">개발자 계정 삭제</button>
-      </div>
-    </section>
     <aside class="location-history" aria-label="이동한 위치 기록">
       <h2>내 이동 기록</h2>
       <ol id="locationHistoryList"></ol>
