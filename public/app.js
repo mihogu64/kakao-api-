@@ -86,6 +86,7 @@ const els = {
   paintedTileCount: document.getElementById('paintedTileCount'),
   paintedTileList: document.getElementById('paintedTileList'),
   teamMembersTitle: document.getElementById('teamMembersTitle'),
+  teamSummary: document.getElementById('teamSummary'),
   teamMembersToggle: document.getElementById('teamMembersToggle'),
   teamMembersBody: document.getElementById('teamMembersBody'),
   teamMembersList: document.getElementById('teamMembersList'),
@@ -498,6 +499,10 @@ async function syncTeamMembers() {
     const payload = await response.json();
     els.teamMembersTitle.textContent = payload.team ? `${payload.team.name} 팀` : '내 팀 없음';
     els.teamMembersTitle.style.color = payload.team?.color || '';
+    const onlineCount = payload.members.filter((member) => member.online).length;
+    els.teamSummary.textContent = payload.team
+      ? `팀원 ${payload.members.length}명 · 온라인 ${onlineCount}명`
+      : '가입한 팀이 없습니다.';
     els.teamMembersList.innerHTML = '';
     payload.members.forEach((member) => {
       const item = document.createElement('li');
@@ -544,6 +549,11 @@ async function syncLeaderboard() {
       item.append(name, score);
       els.leaderboardList.appendChild(item);
     });
+    const currentTeam = payload.leaderboard.find((team) => team.id === state.teamId);
+    if (currentTeam) {
+      const currentSummary = els.teamSummary.textContent.split(' · ')[0];
+      els.teamSummary.textContent = `${currentSummary} · ${currentTeam.tiles}칸 점령 · ${currentTeam.groupPoints}점`;
+    }
     els.leaderboardUpdated.textContent = `마지막 갱신 ${new Date().toLocaleTimeString('ko-KR')}`;
   } catch (error) {
     // Leaderboard polling can recover on the next interval.

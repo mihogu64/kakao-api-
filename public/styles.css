@@ -623,6 +623,16 @@ body {
   font-size: 11px;
 }
 
+.team-summary {
+  margin-top: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  color: #536b80;
+  background: #f3f7fa;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .team-members-panel ul {
   display: grid;
   gap: 6px;
