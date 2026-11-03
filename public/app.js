@@ -64,6 +64,7 @@ const els = {
   settingsCloseButton: document.getElementById('settingsCloseButton'),
   locationTrackingToggle: document.getElementById('locationTrackingToggle'),
   zoomFocusInputs: document.querySelectorAll('input[name="zoomFocus"]'),
+  themeInputs: document.querySelectorAll('input[name="theme"]'),
   fullscreenButton: document.getElementById('fullscreenButton'),
   logoutButton: document.getElementById('logoutButton'),
   authForm: document.getElementById('authForm'),
@@ -203,6 +204,22 @@ function setLocationTracking(enabled) {
     }
     updateGpsDebug('위치 정보 수집 중지');
   }
+}
+
+function getTheme() {
+  return 'light';
+}
+
+function applyTheme(theme = getTheme()) {
+  const validTheme = ['light', 'dark', 'system'].includes(theme) ? theme : 'system';
+  document.documentElement.dataset.theme = validTheme;
+}
+
+function setTheme(theme) {
+  if (!['light', 'dark', 'system'].includes(theme)) {
+    return;
+  }
+  applyTheme(theme);
 }
 
 function toggleFullscreen() {
@@ -1288,5 +1305,15 @@ els.locationTrackingToggle.checked = localStorage.getItem('territory.locationTra
 els.zoomFocusInputs.forEach((input) => {
   input.checked = input.value === getZoomFocus();
   input.addEventListener('change', () => setZoomFocus(input.value));
+});
+applyTheme();
+els.themeInputs.forEach((input) => {
+  input.checked = input.value === getTheme();
+  input.addEventListener('change', () => setTheme(input.value));
+});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (getTheme() === 'system') {
+    applyTheme();
+  }
 });
 restoreSession();

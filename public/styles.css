@@ -1991,6 +1991,187 @@ body {
   box-shadow: none;
 }
 
+/* Theme overrides keep the existing map HUD layout while changing its palette. */
+html[data-theme="dark"] {
+  --map-ink: #e7edf5;
+  --map-muted: #9aa8b8;
+  --map-line: rgba(224, 234, 245, 0.18);
+  --map-panel: rgba(20, 29, 40, 0.94);
+  --map-shadow: 0 6px 22px rgba(0, 0, 0, 0.38);
+  --ink: #e7edf5;
+  --muted: #9aa8b8;
+  --paper: #0c141d;
+  --panel: rgba(20, 29, 40, 0.94);
+  --line: rgba(224, 234, 245, 0.18);
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .auth-screen {
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(circle at top left, rgba(62, 139, 191, 0.18), transparent 36%),
+    linear-gradient(90deg, rgba(224, 234, 245, 0.025) 1px, transparent 1px),
+    linear-gradient(rgba(224, 234, 245, 0.025) 1px, transparent 1px);
+}
+
+html[data-theme="dark"] .auth-card,
+html[data-theme="dark"] .settings-dialog,
+html[data-theme="dark"] .leaderboard-panel,
+html[data-theme="dark"] .gps-status-card,
+html[data-theme="dark"] .account-body,
+html[data-theme="dark"] .team-members-panel,
+html[data-theme="dark"] .map-zoom-controls,
+html[data-theme="dark"] .tile-toast,
+html[data-theme="dark"] .player-label {
+  color: var(--map-ink);
+  background: var(--map-panel);
+  border-color: var(--map-line);
+  box-shadow: var(--map-shadow);
+}
+
+html[data-theme="dark"] .auth-card h1,
+html[data-theme="dark"] .settings-header h2,
+html[data-theme="dark"] .settings-radio-group legend,
+html[data-theme="dark"] .gps-status-toggle strong,
+html[data-theme="dark"] .team-members-panel strong,
+html[data-theme="dark"] .gps-painted-summary strong,
+html[data-theme="dark"] .account-team-section .team-members-toggle strong {
+  color: var(--map-ink);
+}
+
+html[data-theme="dark"] .auth-card p,
+html[data-theme="dark"] .team-selection-help,
+html[data-theme="dark"] .settings-option small,
+html[data-theme="dark"] .settings-radio-group label,
+html[data-theme="dark"] .gps-status-card p,
+html[data-theme="dark"] .gps-status-card small,
+html[data-theme="dark"] .team-summary,
+html[data-theme="dark"] .account-body span,
+html[data-theme="dark"] .season-details dt {
+  color: var(--map-muted);
+}
+
+html[data-theme="dark"] .field input,
+html[data-theme="dark"] .field select,
+html[data-theme="dark"] .settings-button,
+html[data-theme="dark"] .settings-action-button,
+html[data-theme="dark"] .logout-button,
+html[data-theme="dark"] .tile-jump-button,
+html[data-theme="dark"] .team-option {
+  color: var(--map-ink);
+  background: #172330;
+  border-color: var(--map-line);
+}
+
+html[data-theme="dark"] .settings-modal {
+  background: rgba(0, 0, 0, 0.62);
+}
+
+html[data-theme="dark"] .settings-radio-group {
+  border-top-color: var(--map-line);
+}
+
+html[data-theme="dark"] .team-summary {
+  background: #172330;
+}
+
+html[data-theme="dark"] .map-zoom-controls button {
+  color: var(--map-ink);
+}
+
+html[data-theme="dark"] .map-zoom-controls button + button {
+  border-top-color: var(--map-line);
+}
+
+html[data-theme="dark"] .map-zoom-controls button:hover,
+html[data-theme="dark"] .settings-button:hover,
+html[data-theme="dark"] .settings-action-button:hover,
+html[data-theme="dark"] .logout-button:hover,
+html[data-theme="dark"] .tile-jump-button:hover {
+  background: #263746;
+}
+
+html[data-theme="dark"] .leaderboard-panel,
+html[data-theme="dark"] .leaderboard-panel li.current-team {
+  background-color: rgba(20, 41, 67, 0.94);
+}
+
+html[data-theme="dark"] .leaderboard-panel small {
+  border-top-color: var(--map-line);
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-theme="system"] {
+    --map-ink: #e7edf5;
+    --map-muted: #9aa8b8;
+    --map-line: rgba(224, 234, 245, 0.18);
+    --map-panel: rgba(20, 29, 40, 0.94);
+    --map-shadow: 0 6px 22px rgba(0, 0, 0, 0.38);
+    --ink: #e7edf5;
+    --muted: #9aa8b8;
+    --paper: #0c141d;
+  }
+
+  html[data-theme="system"] body,
+  html[data-theme="system"] .auth-screen {
+    color: var(--ink);
+    background-color: var(--paper);
+    background-image:
+      radial-gradient(circle at top left, rgba(62, 139, 191, 0.18), transparent 36%),
+      linear-gradient(90deg, rgba(224, 234, 245, 0.025) 1px, transparent 1px),
+      linear-gradient(rgba(224, 234, 245, 0.025) 1px, transparent 1px);
+  }
+
+  html[data-theme="system"] .auth-card,
+  html[data-theme="system"] .settings-dialog,
+  html[data-theme="system"] .leaderboard-panel,
+  html[data-theme="system"] .gps-status-card,
+  html[data-theme="system"] .account-body,
+  html[data-theme="system"] .team-members-panel,
+  html[data-theme="system"] .map-zoom-controls,
+  html[data-theme="system"] .tile-toast,
+  html[data-theme="system"] .player-label {
+    color: var(--map-ink);
+    background: var(--map-panel);
+    border-color: var(--map-line);
+    box-shadow: var(--map-shadow);
+  }
+
+  html[data-theme="system"] .field input,
+  html[data-theme="system"] .field select,
+  html[data-theme="system"] .settings-button,
+  html[data-theme="system"] .settings-action-button,
+  html[data-theme="system"] .logout-button,
+  html[data-theme="system"] .tile-jump-button,
+  html[data-theme="system"] .team-option {
+    color: var(--map-ink);
+    background: #172330;
+    border-color: var(--map-line);
+  }
+
+  html[data-theme="system"] .settings-modal {
+    background: rgba(0, 0, 0, 0.62);
+  }
+
+  html[data-theme="system"] .team-summary {
+    background: #172330;
+  }
+
+  html[data-theme="system"] .map-zoom-controls button {
+    color: var(--map-ink);
+  }
+
+  html[data-theme="system"] .map-zoom-controls button + button,
+  html[data-theme="system"] .settings-radio-group {
+    border-color: var(--map-line);
+  }
+
+  html[data-theme="system"] .leaderboard-panel {
+    background-color: rgba(20, 41, 67, 0.94);
+  }
+}
+
 .gps-status-card {
   color: #e8f0f3;
   background: rgba(18, 27, 35, 0.9);
