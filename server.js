@@ -7,6 +7,8 @@ const path = require('path');
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'state.json');
+const SUPABASE_URL = String(process.env.SUPABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const GRID_SIZE_DEGREES = 0.00009;
 const SHIELD_MS = 5 * 60 * 60 * 1000;
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
@@ -45,8 +47,8 @@ const state = {
   clients: new Set(),
 };
 
-function savePersistentState() {
-  const snapshot = {
+function getPersistentSnapshot() {
+  return {
     currentSeasonKey: state.currentSeasonKey,
     tileResetAt: state.tileResetAt,
     users: Array.from(state.users.values()),
@@ -54,62 +56,152 @@ function savePersistentState() {
     tiles: Array.from(state.tiles.values()),
     seasons: Array.from(state.seasons.values()),
   };
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(DATA_FILE, JSON.stringify(snapshot, null, 2), 'utf8');
 }
 
-function loadPersistentState() {
-  if (!fs.existsSync(DATA_FILE)) {
+function applyPersistentSnapshot(snapshot) {
+  const legacyTeamIds = { alpha: 'red', delta: 'blue', charlie: 'green' };
+  (snapshot.users || []).forEach((user) => {
+    user.teamId = legacyTeamIds[user.teamId] || user.teamId;
+    state.users.set(user.id, user);
+    state.authByUsername.set(user.username, user);
+    if (user.teamId) {
+      state.memberships.set(user.id, user.teamId);
+    }
+  });
+  (snapshot.teams || []).forEach((team) => {
+    const fixedTeamId = legacyTeamIds[team.id] || team.id;
+    const definition = FIXED_TEAM_DEFINITIONS.find((item) => item.id === fixedTeamId);
+    state.teams.set(fixedTeamId, {
+      ...(state.teams.get(fixedTeamId) || {}),
+      ...team,
+      id: fixedTeamId,
+      name: definition?.name || team.name,
+      color: definition?.color || team.color,
+      memberUserIds: [],
+      pendingUserIds: [],
+    });
+  });
+  state.users.forEach((user) => {
+    const team = state.teams.get(user.teamId);
+    if (team) {
+      team.memberUserIds.push(user.id);
+      state.memberships.set(user.id, team.id);
+    } else {
+      user.teamId = null;
+    }
+  });
+  (snapshot.tiles || []).forEach((tile) => {
+    tile.ownerTeamId = legacyTeamIds[tile.ownerTeamId] || tile.ownerTeamId;
+    const claimedAt = tile.claimedAt ? new Date(tile.claimedAt).getTime() : 0;
+    if (claimedAt) {
+      tile.shieldExpiresAt = new Date(claimedAt + SHIELD_MS).toISOString();
+    }
+    state.tiles.set(`${tile.seasonKey}:${tile.tileKey}`, tile);
+  });
+  (snapshot.seasons || []).forEach((season) => state.seasons.set(season.seasonKey, season));
+  state.currentSeasonKey = snapshot.currentSeasonKey || null;
+  state.tileResetAt = snapshot.tileResetAt || null;
+}
+
+function savePersistentState() {
+  const snapshot = getPersistentSnapshot();
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(DATA_FILE, JSON.stringify(snapshot, null, 2), 'utf8');
+  queueSupabaseSave(snapshot);
+}
+
+async function loadPersistentState() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      applyPersistentSnapshot(JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')));
+    }
+  } catch (error) {
+    console.error(`Persistent state could not be loaded: ${error.message}`);
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return;
   }
 
   try {
-    const snapshot = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    const legacyTeamIds = { alpha: 'red', delta: 'blue', charlie: 'green' };
-    (snapshot.users || []).forEach((user) => {
-      user.teamId = legacyTeamIds[user.teamId] || user.teamId;
-      state.users.set(user.id, user);
-      state.authByUsername.set(user.username, user);
-      if (user.teamId) {
-        state.memberships.set(user.id, user.teamId);
-      }
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/app_state?id=eq.main&select=snapshot`, {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
     });
-    (snapshot.teams || []).forEach((team) => {
-      const fixedTeamId = legacyTeamIds[team.id] || team.id;
-      if (state.teams.has(fixedTeamId)) {
-        state.teams.set(fixedTeamId, {
-          ...state.teams.get(fixedTeamId),
-          ...team,
-          id: fixedTeamId,
-          name: FIXED_TEAM_DEFINITIONS.find((definition) => definition.id === fixedTeamId).name,
-          color: FIXED_TEAM_DEFINITIONS.find((definition) => definition.id === fixedTeamId).color,
-          memberUserIds: [],
-          pendingUserIds: [],
-        });
-      }
-    });
-    state.users.forEach((user) => {
-      const team = state.teams.get(user.teamId);
-      if (team) {
-        team.memberUserIds.push(user.id);
-        state.memberships.set(user.id, team.id);
-      } else {
-        user.teamId = null;
-      }
-    });
-    (snapshot.tiles || []).forEach((tile) => {
-      tile.ownerTeamId = legacyTeamIds[tile.ownerTeamId] || tile.ownerTeamId;
-      const claimedAt = tile.claimedAt ? new Date(tile.claimedAt).getTime() : 0;
-      if (claimedAt) {
-        tile.shieldExpiresAt = new Date(claimedAt + SHIELD_MS).toISOString();
-      }
-      state.tiles.set(`${tile.seasonKey}:${tile.tileKey}`, tile);
-    });
-    (snapshot.seasons || []).forEach((season) => state.seasons.set(season.seasonKey, season));
-    state.currentSeasonKey = snapshot.currentSeasonKey || null;
-    state.tileResetAt = snapshot.tileResetAt || null;
+    if (!response.ok) {
+      throw new Error(`Supabase load failed with status ${response.status}`);
+    }
+    const rows = await response.json();
+    if (rows[0]?.snapshot) {
+      state.users.clear();
+      state.authByUsername.clear();
+      state.memberships.clear();
+      state.teams = new Map(FIXED_TEAM_DEFINITIONS.map((team) => [team.id, {
+        ...team,
+        groupPoints: 0,
+        joinMethod: 'public',
+        leaderUserId: null,
+        memberUserIds: [],
+        pendingUserIds: [],
+      }]));
+      state.tiles.clear();
+      state.seasons.clear();
+      applyPersistentSnapshot(rows[0].snapshot);
+      console.log('Persistent state restored from Supabase.');
+    } else {
+      queueSupabaseSave(getPersistentSnapshot());
+      console.log('Supabase state is empty; local state will be uploaded.');
+    }
   } catch (error) {
-    console.error(`Persistent state could not be loaded: ${error.message}`);
+    console.error(`Supabase state could not be loaded: ${error.message}`);
+  }
+}
+
+let supabaseSaveTimer = null;
+let supabaseSaveInFlight = false;
+let supabaseSaveQueued = null;
+
+function queueSupabaseSave(snapshot) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return;
+  }
+
+  supabaseSaveQueued = snapshot;
+  clearTimeout(supabaseSaveTimer);
+  supabaseSaveTimer = setTimeout(flushSupabaseSave, 250);
+}
+
+async function flushSupabaseSave() {
+  if (supabaseSaveInFlight || !supabaseSaveQueued) {
+    return;
+  }
+
+  const snapshot = supabaseSaveQueued;
+  supabaseSaveQueued = null;
+  supabaseSaveInFlight = true;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/app_state?on_conflict=id`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify({ id: 'main', snapshot, updated_at: nowIso() }),
+    });
+    if (!response.ok) {
+      throw new Error(`Supabase save failed with status ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`Supabase state could not be saved: ${error.message}`);
+  } finally {
+    supabaseSaveInFlight = false;
+    if (supabaseSaveQueued) {
+      queueSupabaseSave(supabaseSaveQueued);
+    }
   }
 }
 
@@ -1129,24 +1221,31 @@ const server = http.createServer((req, res) => {
   sendJson(res, 404, { message: 'Not found' });
 });
 
-loadPersistentState();
+async function startServer() {
+  await loadPersistentState();
+  ensureSeason(startOfWeekKey(new Date()));
+  savePersistentState();
 
-setInterval(() => {
-  resetIfNeeded(new Date());
-  const seasonKey = state.currentSeasonKey;
-  const season = state.seasons.get(seasonKey);
-  if (season) {
-    season.status = getSeasonPhase(new Date()) === 'SETTLEMENT' ? 'SETTLEMENT' : 'PLAYING';
-    if (season.status === 'SETTLEMENT' && !season.settlementStartedAt) {
-      finalizeSeason(seasonKey);
-      broadcast('season-updated', { seasonKey, phase: 'SETTLEMENT', season });
+  setInterval(() => {
+    resetIfNeeded(new Date());
+    const seasonKey = state.currentSeasonKey;
+    const season = state.seasons.get(seasonKey);
+    if (season) {
+      season.status = getSeasonPhase(new Date()) === 'SETTLEMENT' ? 'SETTLEMENT' : 'PLAYING';
+      if (season.status === 'SETTLEMENT' && !season.settlementStartedAt) {
+        finalizeSeason(seasonKey);
+        broadcast('season-updated', { seasonKey, phase: 'SETTLEMENT', season });
+      }
     }
-  }
-}, 15000);
+  }, 15000);
 
-ensureSeason(startOfWeekKey(new Date()));
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Territory Battle server running at http://localhost:${PORT}`);
+    console.log(`Network sharing URL: http://${getNetworkAddress()}:${PORT}`);
+  });
+}
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Territory Battle server running at http://localhost:${PORT}`);
-  console.log(`Network sharing URL: http://${getNetworkAddress()}:${PORT}`);
+startServer().catch((error) => {
+  console.error(`Server initialization failed: ${error.message}`);
+  process.exitCode = 1;
 });

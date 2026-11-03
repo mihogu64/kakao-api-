@@ -1,5 +1,11 @@
 CREATE TYPE season_status AS ENUM ('PLAYING', 'SETTLEMENT', 'ARCHIVED');
 
+CREATE TABLE app_state (
+  id text PRIMARY KEY,
+  snapshot jsonb NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE seasons (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   season_key text NOT NULL UNIQUE,
