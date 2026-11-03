@@ -61,6 +61,17 @@
 
   <main class="map-wrap" id="gameScreen" hidden>
     <div id="map"></div>
+    <div class="game-hud-title" aria-hidden="true">
+      <span class="game-hud-mark">T</span>
+      <span>Territory</span>
+    </div>
+    <aside class="map-legend" aria-label="지도 표시 안내">
+      <strong>지도 안내</strong>
+      <div><i class="legend-swatch legend-red"></i><span>레드 팀</span></div>
+      <div><i class="legend-swatch legend-blue"></i><span>블루 팀</span></div>
+      <div><i class="legend-swatch legend-green"></i><span>그린 팀</span></div>
+      <div><i class="legend-shield"></i><span>보호막 타일</span></div>
+    </aside>
     <div id="gridStatus" class="grid-status" hidden></div>
     <aside class="leaderboard-panel" aria-label="이번 시즌 팀 순위">
       <strong>이번 시즌 순위</strong>
