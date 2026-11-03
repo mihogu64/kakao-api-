@@ -2172,6 +2172,84 @@ html[data-theme="dark"] .leaderboard-panel small {
   }
 }
 
+html[data-theme="dark"] .auth-screen,
+html[data-theme="system"] .auth-screen {
+  color: #20231f;
+  background-color: #f4f1e9;
+  background-image:
+    linear-gradient(90deg, rgba(32, 35, 31, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(32, 35, 31, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+html[data-theme="dark"] .auth-card,
+html[data-theme="system"] .auth-card {
+  color: #20231f;
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #d8d5cb;
+  border-top-color: #c84b35;
+  box-shadow: 0 10px 26px rgba(35, 38, 31, 0.12);
+}
+
+html[data-theme="dark"] .auth-card h1,
+html[data-theme="system"] .auth-card h1 {
+  color: #20231f;
+}
+
+html[data-theme="dark"] .auth-card p,
+html[data-theme="system"] .auth-card p,
+html[data-theme="dark"] .team-selection-help,
+html[data-theme="system"] .team-selection-help,
+html[data-theme="dark"] .auth-footnote,
+html[data-theme="system"] .auth-footnote {
+  color: #6c7168;
+}
+
+html[data-theme="dark"] .auth-tab,
+html[data-theme="system"] .auth-tab {
+  color: #6c7168;
+  background: transparent;
+  border-bottom-color: #d8d5cb;
+}
+
+html[data-theme="dark"] .auth-tab.active,
+html[data-theme="system"] .auth-tab.active {
+  color: #963826;
+  background: transparent;
+  border-bottom-color: #c84b35;
+}
+
+html[data-theme="dark"] .field input,
+html[data-theme="system"] .field input,
+html[data-theme="dark"] .field select,
+html[data-theme="system"] .field select {
+  color: #20231f;
+  background: #ffffff;
+  border-color: #d8d5cb;
+}
+
+html[data-theme="dark"] .team-selection,
+html[data-theme="system"] .team-selection,
+html[data-theme="dark"] .terms-box,
+html[data-theme="system"] .terms-box {
+  border-color: #d8d5cb;
+  color: #20231f;
+}
+
+html[data-theme="dark"] .team-selection legend,
+html[data-theme="system"] .team-selection legend,
+html[data-theme="dark"] .terms-box legend,
+html[data-theme="system"] .terms-box legend {
+  color: #20231f;
+}
+
+html[data-theme="dark"] .team-option,
+html[data-theme="system"] .team-option {
+  color: #20231f;
+  background: #ffffff;
+  border-color: color-mix(in srgb, var(--team-color) 55%, transparent);
+}
+
 .gps-status-card {
   color: var(--map-ink);
   background: var(--map-panel);
