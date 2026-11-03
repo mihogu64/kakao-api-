@@ -2253,6 +2253,13 @@ html[data-theme="system"] .terms-copy {
   color: #6c7168;
 }
 
+html[data-theme="dark"] .terms-copy p,
+html[data-theme="system"] .terms-copy p,
+html[data-theme="dark"] .terms-check span,
+html[data-theme="system"] .terms-check span {
+  color: #6c7168;
+}
+
 html[data-theme="dark"] .terms-check,
 html[data-theme="system"] .terms-check {
   color: #20231f;
