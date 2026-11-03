@@ -207,7 +207,7 @@ function setLocationTracking(enabled) {
 }
 
 function getTheme() {
-  return localStorage.getItem('territory.theme') || 'light';
+  return localStorage.getItem('territory.theme') || 'system';
 }
 
 function applyTheme(theme = getTheme()) {
