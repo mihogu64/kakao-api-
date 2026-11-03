@@ -1848,8 +1848,8 @@ body {
   right: auto;
   bottom: auto;
   left: 18px;
-  width: 220px;
-  padding: 12px 14px;
+  width: 190px;
+  padding: 12px 10px;
   border-radius: 14px;
   background: rgba(29, 48, 77, 0.88);
   border-color: rgba(255, 255, 255, 0.3);
@@ -1883,9 +1883,18 @@ body {
 }
 
 .leaderboard-panel li {
-  margin: 4px -5px;
-  padding: 7px 6px;
+  margin: 4px 0;
+  padding: 7px 4px;
   border-radius: 6px;
+}
+
+.leaderboard-panel ol {
+  padding-left: 0;
+  list-style: none;
+}
+
+.leaderboard-team-name {
+  margin-right: 4px;
 }
 
 .leaderboard-panel li.current-team {
@@ -1919,7 +1928,7 @@ body {
   .leaderboard-panel {
     top: 84px;
     left: 12px;
-    width: 184px;
+    width: 170px;
   }
 }
 

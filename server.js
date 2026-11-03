@@ -13,7 +13,7 @@ const GRID_SIZE_DEGREES = 0.00009;
 const SHIELD_MS = 5 * 60 * 60 * 1000;
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const TEAM_BALANCE_LIMIT = 5;
-const ONLINE_WINDOW_MS = 30 * 1000;
+const ONLINE_WINDOW_MS = 20 * 1000;
 
 const FIXED_TEAM_DEFINITIONS = [
   { id: 'red', name: '레드', color: '#FF3B30' },
