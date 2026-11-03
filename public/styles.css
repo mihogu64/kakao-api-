@@ -738,9 +738,11 @@ body {
 }
 
 .member-status {
+  display: inline-block;
   width: 10px;
   height: 10px;
   flex: 0 0 auto;
+  vertical-align: middle;
   border-radius: 50%;
   background: #182126;
   box-shadow: 0 0 0 1px rgba(24, 33, 38, 0.3);
