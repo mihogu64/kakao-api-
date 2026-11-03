@@ -742,11 +742,13 @@ body {
   height: 7px;
   flex: 0 0 auto;
   border-radius: 50%;
-  background: #a5afba;
+  background: #182126;
+  box-shadow: 0 0 0 1px rgba(24, 33, 38, 0.18);
 }
 
 .member-status.online {
-  background: #22a06b;
+  background: #24c878;
+  box-shadow: 0 0 0 2px rgba(36, 200, 120, 0.18);
 }
 
 .painted-tile-summary li {

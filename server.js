@@ -944,6 +944,7 @@ function handleApi(req, res, pathname, query) {
       return;
     }
 
+    authUser.lastSeenAt = nowIso();
     const team = authUser.teamId ? state.teams.get(authUser.teamId) : null;
     const members = team
       ? team.memberUserIds.map((userId) => getUserById(userId)).filter(Boolean).map((user) => ({

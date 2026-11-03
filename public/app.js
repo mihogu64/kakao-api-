@@ -619,6 +619,8 @@ async function syncTeamMembers() {
       const item = document.createElement('li');
       const status = document.createElement('span');
       status.className = `member-status ${member.online ? 'online' : ''}`;
+      status.title = member.online ? '접속 중' : '미접속';
+      status.setAttribute('aria-label', member.online ? '접속 중' : '미접속');
       const name = document.createElement('span');
       name.textContent = member.username;
       item.append(status, name);
