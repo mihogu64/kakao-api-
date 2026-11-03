@@ -79,6 +79,8 @@ const els = {
   locationHistoryList: document.getElementById('locationHistoryList'),
   tileToast: document.getElementById('tileToast'),
   gridStatus: document.getElementById('gridStatus'),
+  zoomInButton: document.getElementById('zoomInButton'),
+  zoomOutButton: document.getElementById('zoomOutButton'),
   leaderboardList: document.getElementById('leaderboardList'),
   leaderboardUpdated: document.getElementById('leaderboardUpdated'),
   leaderboardToggle: document.getElementById('leaderboardToggle'),
@@ -1211,7 +1213,6 @@ function initMap() {
       center: new kakao.maps.LatLng(INITIAL_MAP_CENTER.lat, INITIAL_MAP_CENTER.lng),
       level: 13,
     });
-    state.map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
     loadLocationHistory();
     kakao.maps.event.addListener(state.map, 'idle', () => {
       scheduleGridRender(state.map);
@@ -1256,5 +1257,15 @@ els.gpsStatusToggle.addEventListener('click', toggleGpsStatus);
 els.logoutButton.addEventListener('click', logout);
 els.teamMembersToggle.addEventListener('click', toggleTeamMembers);
 els.leaderboardToggle.addEventListener('click', toggleLeaderboard);
+els.zoomInButton.addEventListener('click', () => {
+  if (state.map) {
+    state.map.setLevel(Math.max(1, state.map.getLevel() - 1));
+  }
+});
+els.zoomOutButton.addEventListener('click', () => {
+  if (state.map) {
+    state.map.setLevel(Math.min(14, state.map.getLevel() + 1));
+  }
+});
 els.locationTrackingToggle.checked = localStorage.getItem('territory.locationTracking') !== 'false';
 restoreSession();

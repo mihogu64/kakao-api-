@@ -1722,6 +1722,49 @@ body {
   box-shadow: 0 7px 22px rgba(27, 91, 177, 0.32);
 }
 
+.map-zoom-controls {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  z-index: 20;
+  display: grid;
+  width: 42px;
+  overflow: hidden;
+  transform: translateY(-50%);
+  border: 1px solid rgba(38, 51, 46, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--map-shadow);
+}
+
+.map-zoom-controls button {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  color: #26332e;
+  background: transparent;
+  font: inherit;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.map-zoom-controls button + button {
+  border-top: 1px solid rgba(38, 51, 46, 0.16);
+  font-size: 27px;
+}
+
+.map-zoom-controls button:hover {
+  background: #f1f4f1;
+}
+
+@media (max-width: 620px) {
+  .map-zoom-controls {
+    right: 12px;
+  }
+}
+
 .own-team-capture-icon {
   display: grid;
   place-items: center;
