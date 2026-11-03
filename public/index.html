@@ -72,6 +72,7 @@
       <div id="accountBody" class="account-body" hidden>
         <strong id="accountUsername">사용자</strong>
         <span id="accountTeam">팀 정보 없음</span>
+        <button id="seasonButton" class="settings-button" type="button">이번 시즌</button>
         <button id="settingsButton" class="settings-button" type="button">설정</button>
         <button id="logoutButton" class="logout-button" type="button">로그아웃</button>
       </div>
@@ -124,6 +125,15 @@
           <input id="locationTrackingToggle" type="checkbox" checked />
         </label>
         <button id="fullscreenButton" class="settings-action-button" type="button">전체 화면</button>
+      </div>
+    </section>
+    <section id="seasonModal" class="settings-modal" hidden aria-labelledby="seasonModalTitle">
+      <div class="settings-dialog season-dialog" role="dialog" aria-modal="true">
+        <div class="settings-header">
+          <h2 id="seasonModalTitle">이번 시즌</h2>
+          <button id="seasonCloseButton" class="settings-close-button" type="button">닫기</button>
+        </div>
+        <div id="seasonDetails" class="season-details">시즌 정보를 불러오는 중...</div>
       </div>
     </section>
   </main>

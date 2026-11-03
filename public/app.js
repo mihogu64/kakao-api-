@@ -55,6 +55,10 @@ const els = {
   accountBody: document.getElementById('accountBody'),
   accountUsername: document.getElementById('accountUsername'),
   accountTeam: document.getElementById('accountTeam'),
+  seasonButton: document.getElementById('seasonButton'),
+  seasonModal: document.getElementById('seasonModal'),
+  seasonCloseButton: document.getElementById('seasonCloseButton'),
+  seasonDetails: document.getElementById('seasonDetails'),
   settingsButton: document.getElementById('settingsButton'),
   settingsModal: document.getElementById('settingsModal'),
   settingsCloseButton: document.getElementById('settingsCloseButton'),
@@ -138,6 +142,45 @@ function openSettings() {
 
 function closeSettings() {
   els.settingsModal.hidden = true;
+}
+
+function formatSeasonDate(value) {
+  if (!value) {
+    return '정보 없음';
+  }
+  return new Date(value).toLocaleString('ko-KR', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+async function openSeasonModal() {
+  els.seasonModal.hidden = false;
+  els.seasonDetails.textContent = '시즌 정보를 불러오는 중...';
+  try {
+    const response = await fetch('/api/state', { headers: authHeaders() });
+    if (handleUnauthorized(response) || !response.ok) {
+      throw new Error('시즌 정보를 불러오지 못했습니다.');
+    }
+    const payload = await response.json();
+    const currentTeam = payload.leaderboard.find((team) => team.id === state.teamId);
+    const rank = currentTeam ? payload.leaderboard.indexOf(currentTeam) + 1 : null;
+    const status = payload.phase === 'SETTLEMENT' ? '정산 중' : '시즌 진행 중';
+    const season = payload.season || {};
+    els.seasonDetails.innerHTML = `
+      <p class="season-status">${status}</p>
+      <dl>
+        <dt>시즌</dt><dd>${payload.seasonKey || '정보 없음'}</dd>
+        <dt>시작</dt><dd>${formatSeasonDate(season.startedAt)}</dd>
+        <dt>내 팀 순위</dt><dd>${rank ? `${rank}위` : '순위 없음'}</dd>
+        <dt>내 팀 점령</dt><dd>${currentTeam ? `${currentTeam.tiles}칸` : '0칸'}</dd>
+        <dt>팀 점수</dt><dd>${currentTeam ? `${currentTeam.groupPoints}점` : '0점'}</dd>
+      </dl>
+    `;
+  } catch (error) {
+    els.seasonDetails.textContent = error.message;
+  }
+}
+
+function closeSeasonModal() {
+  els.seasonModal.hidden = true;
 }
 
 function setLocationTracking(enabled) {
@@ -1189,6 +1232,8 @@ els.authForm.addEventListener('submit', submitAuth);
 els.accountToggle.addEventListener('click', toggleAccountPanel);
 els.settingsButton.addEventListener('click', openSettings);
 els.settingsCloseButton.addEventListener('click', closeSettings);
+els.seasonButton.addEventListener('click', openSeasonModal);
+els.seasonCloseButton.addEventListener('click', closeSeasonModal);
 els.locationTrackingToggle.addEventListener('change', (event) => setLocationTracking(event.target.checked));
 els.fullscreenButton.addEventListener('click', toggleFullscreen);
 els.gpsStatusToggle.addEventListener('click', toggleGpsStatus);

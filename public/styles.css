@@ -836,6 +836,39 @@ body {
   cursor: pointer;
 }
 
+.season-dialog {
+  max-width: 380px;
+}
+
+.season-details p {
+  margin: 0 0 14px;
+}
+
+.season-status {
+  color: #16834b;
+  font-weight: 700;
+}
+
+.season-details dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 9px 16px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid #e6edf2;
+  font-size: 13px;
+}
+
+.season-details dt {
+  color: #64748b;
+}
+
+.season-details dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
 .settings-button:hover,
 .settings-action-button:hover {
   background: #edf4f9;
