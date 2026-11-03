@@ -738,17 +738,17 @@ body {
 }
 
 .member-status {
-  width: 7px;
-  height: 7px;
+  width: 10px;
+  height: 10px;
   flex: 0 0 auto;
   border-radius: 50%;
   background: #182126;
-  box-shadow: 0 0 0 1px rgba(24, 33, 38, 0.18);
+  box-shadow: 0 0 0 1px rgba(24, 33, 38, 0.3);
 }
 
 .member-status.online {
-  background: #24c878;
-  box-shadow: 0 0 0 2px rgba(36, 200, 120, 0.18);
+  background: #19d879;
+  box-shadow: 0 0 0 2px rgba(25, 216, 121, 0.3), 0 0 8px rgba(25, 216, 121, 0.5);
 }
 
 .painted-tile-summary li {

@@ -13,6 +13,7 @@ const GRID_SIZE_DEGREES = 0.00009;
 const SHIELD_MS = 5 * 60 * 60 * 1000;
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const TEAM_BALANCE_LIMIT = 5;
+const ONLINE_WINDOW_MS = 30 * 1000;
 
 const FIXED_TEAM_DEFINITIONS = [
   { id: 'red', name: '레드', color: '#FF3B30' },
@@ -950,7 +951,7 @@ function handleApi(req, res, pathname, query) {
       ? team.memberUserIds.map((userId) => getUserById(userId)).filter(Boolean).map((user) => ({
         id: user.id,
         username: user.username,
-        online: Boolean(user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= Date.now() - 5 * 60 * 1000),
+        online: Boolean(user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= Date.now() - ONLINE_WINDOW_MS),
       }))
       : [];
     sendJson(res, 200, {
