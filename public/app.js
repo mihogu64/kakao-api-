@@ -207,7 +207,7 @@ function setLocationTracking(enabled) {
 }
 
 function getTheme() {
-  return 'light';
+  return localStorage.getItem('territory.theme') || 'light';
 }
 
 function applyTheme(theme = getTheme()) {
@@ -219,6 +219,7 @@ function setTheme(theme) {
   if (!['light', 'dark', 'system'].includes(theme)) {
     return;
   }
+  localStorage.setItem('territory.theme', theme);
   applyTheme(theme);
 }
 

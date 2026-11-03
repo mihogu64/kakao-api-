@@ -690,9 +690,22 @@ function serveFile(res, filePath, contentType) {
       return;
     }
 
-    res.writeHead(200, { 'Content-Type': contentType });
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
+    });
     res.end(content);
   });
+}
+
+function getAssetVersion() {
+  const assetFiles = ['index.html', 'styles.css', 'app.js'].map((name) => {
+    const filePath = path.join(publicDir, name);
+    return fs.statSync(filePath).mtimeMs;
+  });
+  return String(Math.max(...assetFiles));
 }
 
 function proxyKakaoSdk(req, res, search = '') {
@@ -1216,6 +1229,27 @@ const server = http.createServer((req, res) => {
   };
 
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+    if (assetPath === '/index.html') {
+      fs.readFile(filePath, 'utf8', (error, content) => {
+        if (error) {
+          res.writeHead(404);
+          res.end('Not found');
+          return;
+        }
+        const version = getAssetVersion();
+        const html = content
+          .replace('href="/styles.css"', `href="/styles.css?v=${version}"`)
+          .replace('src="/app.js"', `src="/app.js?v=${version}"`);
+        res.writeHead(200, {
+          'Content-Type': contentTypes['.html'],
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        });
+        res.end(html);
+      });
+      return;
+    }
     serveFile(res, filePath, contentTypes[extension] || 'application/octet-stream');
     return;
   }
