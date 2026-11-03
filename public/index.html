@@ -85,7 +85,7 @@
       </div>
     </aside>
     <aside class="account-panel" aria-label="계정 정보">
-      <button id="accountToggle" class="account-toggle" type="button" aria-expanded="false" title="계정 정보">내 정보</button>
+      <button id="accountToggle" class="account-toggle" type="button" aria-expanded="false" title="계정 정보">계정</button>
       <div id="accountBody" class="account-body" hidden>
         <strong id="accountUsername">사용자</strong>
         <span id="accountTeam">팀 정보 없음</span>
@@ -141,6 +141,17 @@
           </span>
           <input id="locationTrackingToggle" type="checkbox" checked />
         </label>
+        <fieldset class="settings-option settings-radio-group">
+          <legend>확대 기준</legend>
+          <label>
+            <input type="radio" name="zoomFocus" value="location" />
+            <span>내 위치를 기준으로 확대</span>
+          </label>
+          <label>
+            <input type="radio" name="zoomFocus" value="center" />
+            <span>화면 중앙을 기준으로 확대</span>
+          </label>
+        </fieldset>
         <button id="fullscreenButton" class="settings-action-button" type="button">전체 화면</button>
       </div>
     </section>

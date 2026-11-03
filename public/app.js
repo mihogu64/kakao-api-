@@ -63,6 +63,7 @@ const els = {
   settingsModal: document.getElementById('settingsModal'),
   settingsCloseButton: document.getElementById('settingsCloseButton'),
   locationTrackingToggle: document.getElementById('locationTrackingToggle'),
+  zoomFocusInputs: document.querySelectorAll('input[name="zoomFocus"]'),
   fullscreenButton: document.getElementById('fullscreenButton'),
   logoutButton: document.getElementById('logoutButton'),
   authForm: document.getElementById('authForm'),
@@ -210,6 +211,24 @@ function toggleFullscreen() {
     return;
   }
   els.gameScreen.requestFullscreen?.();
+}
+
+function getZoomFocus() {
+  return localStorage.getItem('territory.zoomFocus') || 'center';
+}
+
+function setZoomFocus(value) {
+  localStorage.setItem('territory.zoomFocus', value);
+}
+
+function zoomMap(levelDelta) {
+  if (!state.map) {
+    return;
+  }
+  if (getZoomFocus() === 'location' && state.playerPosition) {
+    state.map.setCenter(new kakao.maps.LatLng(state.playerPosition.lat, state.playerPosition.lng));
+  }
+  state.map.setLevel(Math.max(1, Math.min(14, state.map.getLevel() + levelDelta)));
 }
 
 function logout() {
@@ -1258,14 +1277,14 @@ els.logoutButton.addEventListener('click', logout);
 els.teamMembersToggle.addEventListener('click', toggleTeamMembers);
 els.leaderboardToggle.addEventListener('click', toggleLeaderboard);
 els.zoomInButton.addEventListener('click', () => {
-  if (state.map) {
-    state.map.setLevel(Math.max(1, state.map.getLevel() - 1));
-  }
+  zoomMap(-1);
 });
 els.zoomOutButton.addEventListener('click', () => {
-  if (state.map) {
-    state.map.setLevel(Math.min(14, state.map.getLevel() + 1));
-  }
+  zoomMap(1);
 });
 els.locationTrackingToggle.checked = localStorage.getItem('territory.locationTracking') !== 'false';
+els.zoomFocusInputs.forEach((input) => {
+  input.checked = input.value === getZoomFocus();
+  input.addEventListener('change', () => setZoomFocus(input.value));
+});
 restoreSession();
