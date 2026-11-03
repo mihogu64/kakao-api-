@@ -2243,6 +2243,21 @@ html[data-theme="system"] .terms-box legend {
   color: #20231f;
 }
 
+html[data-theme="dark"] .terms-box summary,
+html[data-theme="system"] .terms-box summary {
+  color: #963826;
+}
+
+html[data-theme="dark"] .terms-copy,
+html[data-theme="system"] .terms-copy {
+  color: #6c7168;
+}
+
+html[data-theme="dark"] .terms-check,
+html[data-theme="system"] .terms-check {
+  color: #20231f;
+}
+
 html[data-theme="dark"] .team-option,
 html[data-theme="system"] .team-option {
   color: #20231f;
