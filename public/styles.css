@@ -1945,6 +1945,29 @@ body {
   margin-top: 8px;
 }
 
+.account-team-section ul {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-team-section li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.account-team-section li > span:not(.member-status) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .account-team-section .team-members-panel {
   position: static;
   width: auto;
