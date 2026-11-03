@@ -1730,10 +1730,16 @@ body {
   flex: 0 0 auto;
   border: 2px solid rgba(255, 255, 255, 0.58);
   border-radius: 14px;
-  color: #fff3a6;
+  color: #ffffff;
   background: rgba(15, 75, 181, 0.38);
-  font-size: 30px;
+  font-size: 25px;
+  font-weight: 800;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.own-team-capture-icon.first-place {
+  color: #ffe66d;
+  font-size: 30px;
 }
 
 .own-team-capture-card span,
@@ -1774,9 +1780,28 @@ body {
   backdrop-filter: blur(8px);
 }
 
-.leaderboard-panel > strong {
+.leaderboard-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.leaderboard-toggle strong {
   color: #ffffff;
   font-size: 12px;
+}
+
+.leaderboard-toggle span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
 }
 
 .leaderboard-panel li {

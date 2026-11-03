@@ -63,7 +63,7 @@
     <div id="map"></div>
     <div id="gridStatus" class="grid-status" hidden></div>
     <aside class="own-team-capture-card" aria-label="내 팀 점령 타일 수">
-      <div class="own-team-capture-icon" aria-hidden="true">◆</div>
+      <div id="ownTeamCaptureIcon" class="own-team-capture-icon" aria-hidden="true">1</div>
       <div>
         <span>내 팀</span>
         <strong id="ownTeamCaptureCount">0</strong>
@@ -71,9 +71,14 @@
       </div>
     </aside>
     <aside class="leaderboard-panel" aria-label="이번 시즌 팀 순위">
-      <strong>팀별 점령 타일</strong>
-      <ol id="leaderboardList"></ol>
-      <small id="leaderboardUpdated">갱신 대기 중</small>
+      <button id="leaderboardToggle" class="leaderboard-toggle" type="button" aria-expanded="true">
+        <strong>팀별 점령 타일</strong>
+        <span>접기</span>
+      </button>
+      <div id="leaderboardBody">
+        <ol id="leaderboardList"></ol>
+        <small id="leaderboardUpdated">갱신 대기 중</small>
+      </div>
     </aside>
     <aside class="account-panel" aria-label="계정 정보">
       <button id="accountToggle" class="account-toggle" type="button" aria-expanded="false" title="계정 정보">내 정보</button>

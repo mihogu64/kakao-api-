@@ -81,6 +81,9 @@ const els = {
   gridStatus: document.getElementById('gridStatus'),
   leaderboardList: document.getElementById('leaderboardList'),
   leaderboardUpdated: document.getElementById('leaderboardUpdated'),
+  leaderboardToggle: document.getElementById('leaderboardToggle'),
+  leaderboardBody: document.getElementById('leaderboardBody'),
+  ownTeamCaptureIcon: document.getElementById('ownTeamCaptureIcon'),
   ownTeamCaptureCount: document.getElementById('ownTeamCaptureCount'),
   gpsStatusCard: document.getElementById('gpsStatusCard'),
   gpsDebugStatus: document.getElementById('gpsDebugStatus'),
@@ -638,6 +641,9 @@ async function syncLeaderboard() {
     });
     const currentTeam = payload.leaderboard.find((team) => team.id === state.teamId);
     if (currentTeam) {
+      const currentRank = payload.leaderboard.indexOf(currentTeam) + 1;
+      els.ownTeamCaptureIcon.textContent = currentRank === 1 ? '👑' : String(currentRank);
+      els.ownTeamCaptureIcon.classList.toggle('first-place', currentRank === 1);
       els.ownTeamCaptureCount.textContent = currentTeam.tiles;
       els.ownTeamCaptureCount.style.color = currentTeam.color;
       const currentSummary = els.teamSummary.textContent.split(' · ')[0];
@@ -647,6 +653,13 @@ async function syncLeaderboard() {
   } catch (error) {
     // Leaderboard polling can recover on the next interval.
   }
+}
+
+function toggleLeaderboard() {
+  const isExpanded = els.leaderboardToggle.getAttribute('aria-expanded') === 'true';
+  els.leaderboardToggle.setAttribute('aria-expanded', String(!isExpanded));
+  els.leaderboardBody.hidden = isExpanded;
+  els.leaderboardToggle.querySelector('span').textContent = isExpanded ? '펼치기' : '접기';
 }
 
 function toggleTeamMembers() {
@@ -1242,5 +1255,6 @@ els.fullscreenButton.addEventListener('click', toggleFullscreen);
 els.gpsStatusToggle.addEventListener('click', toggleGpsStatus);
 els.logoutButton.addEventListener('click', logout);
 els.teamMembersToggle.addEventListener('click', toggleTeamMembers);
+els.leaderboardToggle.addEventListener('click', toggleLeaderboard);
 els.locationTrackingToggle.checked = localStorage.getItem('territory.locationTracking') !== 'false';
 restoreSession();
