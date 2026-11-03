@@ -83,6 +83,7 @@ const els = {
   gpsDebugUpdated: document.getElementById('gpsDebugUpdated'),
   gpsAccuracyHint: document.getElementById('gpsAccuracyHint'),
   gpsStatusToggle: document.getElementById('gpsStatusToggle'),
+  gpsStatusLive: document.getElementById('gpsStatusLive'),
   gpsStatusBody: document.getElementById('gpsStatusBody'),
   paintedTileCount: document.getElementById('paintedTileCount'),
   paintedTileList: document.getElementById('paintedTileList'),
@@ -126,7 +127,7 @@ function toggleGpsStatus() {
   const expanded = els.gpsStatusToggle.getAttribute('aria-expanded') === 'true';
   els.gpsStatusToggle.setAttribute('aria-expanded', String(!expanded));
   els.gpsStatusBody.hidden = expanded;
-  els.gpsStatusToggle.querySelector('span').textContent = expanded ? '펼치기' : '접기';
+  els.gpsStatusToggle.querySelector('b').textContent = expanded ? '펼치기' : '접기';
 }
 
 function openSettings() {
@@ -169,6 +170,7 @@ function logout() {
 
 function updateGpsDebug(status, position = null) {
   els.gpsDebugStatus.textContent = status;
+  els.gpsStatusLive.textContent = status;
   const tone = status.includes('점령 가능') || status.includes('위치 수신 중')
     ? 'ready'
     : status.includes('실패') || status.includes('오류') || status.includes('보류') || status.includes('보호막')

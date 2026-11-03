@@ -539,8 +539,26 @@ body {
 }
 
 .gps-status-toggle span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: #64748b;
   font-size: 11px;
+}
+
+.gps-status-toggle em {
+  max-width: 105px;
+  overflow: hidden;
+  color: #16834b;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gps-status-toggle b {
+  font-weight: 400;
 }
 
 .gps-painted-summary {
