@@ -81,6 +81,7 @@ const els = {
   gridStatus: document.getElementById('gridStatus'),
   leaderboardList: document.getElementById('leaderboardList'),
   leaderboardUpdated: document.getElementById('leaderboardUpdated'),
+  ownTeamCaptureCount: document.getElementById('ownTeamCaptureCount'),
   gpsStatusCard: document.getElementById('gpsStatusCard'),
   gpsDebugStatus: document.getElementById('gpsDebugStatus'),
   gpsDebugPosition: document.getElementById('gpsDebugPosition'),
@@ -637,6 +638,8 @@ async function syncLeaderboard() {
     });
     const currentTeam = payload.leaderboard.find((team) => team.id === state.teamId);
     if (currentTeam) {
+      els.ownTeamCaptureCount.textContent = currentTeam.tiles;
+      els.ownTeamCaptureCount.style.color = currentTeam.color;
       const currentSummary = els.teamSummary.textContent.split(' · ')[0];
       els.teamSummary.textContent = `${currentSummary} · ${currentTeam.tiles}칸 점령 · ${currentTeam.groupPoints}점`;
     }
