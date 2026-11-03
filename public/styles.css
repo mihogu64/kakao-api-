@@ -1542,3 +1542,164 @@ body {
     bottom: 18px;
   }
 }
+
+:root {
+  --map-ink: #26332e;
+  --map-muted: #78827c;
+  --map-line: rgba(38, 51, 46, 0.13);
+  --map-panel: rgba(255, 255, 255, 0.92);
+  --map-shadow: 0 4px 18px rgba(38, 51, 46, 0.16);
+}
+
+.leaderboard-panel,
+.gps-status-card,
+.team-members-panel,
+.account-body {
+  border: 1px solid var(--map-line);
+  border-radius: 10px;
+  color: var(--map-ink);
+  background: var(--map-panel);
+  box-shadow: var(--map-shadow);
+  backdrop-filter: blur(8px);
+}
+
+.leaderboard-panel {
+  width: min(216px, calc(100vw - 36px));
+  padding: 14px 15px;
+}
+
+.leaderboard-panel > strong {
+  margin-bottom: 10px;
+  color: var(--map-ink);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.leaderboard-panel li {
+  margin: 4px -5px;
+  padding: 6px 5px;
+  border-radius: 5px;
+}
+
+.leaderboard-panel li.current-team {
+  background: rgba(200, 75, 53, 0.08);
+}
+
+.leaderboard-panel small {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--map-line);
+}
+
+.gps-status-card {
+  width: min(270px, calc(100vw - 36px));
+  padding: 13px 15px;
+}
+
+.gps-status-toggle {
+  min-height: 22px;
+}
+
+.gps-status-toggle strong,
+.team-members-panel strong,
+.gps-painted-summary strong {
+  color: var(--map-ink);
+  font-size: 13px;
+}
+
+.gps-status-toggle span {
+  color: var(--map-muted);
+}
+
+.gps-status-card p {
+  color: var(--map-muted);
+}
+
+.gps-status-card p:first-of-type,
+.gps-status-card.ready p:first-of-type {
+  color: var(--success);
+}
+
+.gps-painted-summary {
+  border-top-color: var(--map-line);
+}
+
+.team-members-panel {
+  width: 210px;
+  padding: 14px 15px;
+}
+
+.team-members-toggle span {
+  color: var(--map-muted);
+}
+
+.team-summary {
+  margin-top: 10px;
+  border-radius: 6px;
+  color: var(--map-muted);
+  background: #f5f7f4;
+}
+
+.account-panel {
+  right: 70px;
+  top: 16px;
+}
+
+.account-toggle {
+  width: auto;
+  height: 36px;
+  padding: 0 13px;
+  border: 1px solid var(--map-line);
+  border-radius: 18px;
+  color: var(--map-ink);
+  background: var(--map-panel);
+  box-shadow: var(--map-shadow);
+  font-size: 12px;
+}
+
+.account-body {
+  min-width: 190px;
+  margin-top: 7px;
+  padding: 13px 14px;
+}
+
+.account-body span,
+.season-details dt {
+  color: var(--map-muted);
+}
+
+.settings-button,
+.settings-action-button,
+.logout-button,
+.tile-jump-button {
+  border-color: var(--map-line);
+  border-radius: 6px;
+}
+
+.settings-button:hover,
+.settings-action-button:hover,
+.logout-button:hover,
+.tile-jump-button:hover {
+  background: #f1f4f1;
+}
+
+.settings-modal {
+  background: rgba(31, 42, 37, 0.28);
+  backdrop-filter: blur(2px);
+}
+
+.settings-dialog {
+  border: 1px solid var(--map-line);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(38, 51, 46, 0.22);
+}
+
+@media (max-width: 620px) {
+  .account-toggle {
+    height: 34px;
+  }
+
+  .gps-status-card {
+    width: 240px;
+  }
+}
