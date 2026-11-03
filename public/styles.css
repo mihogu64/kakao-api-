@@ -1844,3 +1844,124 @@ body {
     width: 184px;
   }
 }
+
+.account-body .account-team-section {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--map-line);
+}
+
+.account-team-section .team-members-toggle {
+  min-height: 22px;
+}
+
+.account-team-section .team-members-toggle strong {
+  color: var(--map-ink);
+}
+
+.account-team-section .team-members-toggle span {
+  color: var(--map-muted);
+}
+
+.account-team-section .team-summary {
+  margin-top: 8px;
+}
+
+.account-team-section .team-members-panel {
+  position: static;
+  width: auto;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  transform: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.gps-status-card {
+  color: #e8f0f3;
+  background: rgba(18, 27, 35, 0.9);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 24px rgba(11, 24, 31, 0.3);
+}
+
+.gps-status-toggle strong,
+.gps-painted-summary strong {
+  color: #f3f7f8;
+}
+
+.gps-status-toggle span {
+  color: #a7b7bd;
+}
+
+.gps-status-card p {
+  color: #a7b7bd;
+}
+
+.gps-status-card p:first-of-type,
+.gps-status-card.ready p:first-of-type {
+  color: #5de39a;
+}
+
+.gps-status-card.warning p:first-of-type {
+  color: #ffc66d;
+}
+
+.gps-connection-icon {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 14px;
+  margin-right: 7px;
+  vertical-align: -2px;
+}
+
+.gps-connection-icon::before,
+.gps-connection-icon::after {
+  position: absolute;
+  content: "";
+  border: 2px solid #5de39a;
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+}
+
+.gps-connection-icon::before {
+  inset: 1px 0 4px;
+}
+
+.gps-connection-icon::after {
+  inset: 5px 4px 4px;
+}
+
+.gps-connection-icon {
+  border-bottom: 3px solid #5de39a;
+  border-radius: 0 0 10px 10px;
+}
+
+.gps-status-card.warning .gps-connection-icon::before,
+.gps-status-card.warning .gps-connection-icon::after {
+  border-color: #ffc66d;
+}
+
+.gps-status-card.warning .gps-connection-icon {
+  border-bottom-color: #ffc66d;
+}
+
+.gps-status-card.waiting .gps-connection-icon::before,
+.gps-status-card.waiting .gps-connection-icon::after {
+  border-color: #a7b7bd;
+}
+
+.gps-status-card.waiting .gps-connection-icon {
+  border-bottom-color: #a7b7bd;
+}
+
+@media (max-width: 620px) {
+  .account-body {
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+  }
+}

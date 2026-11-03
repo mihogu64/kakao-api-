@@ -88,11 +88,21 @@
         <button id="seasonButton" class="settings-button" type="button">이번 시즌</button>
         <button id="settingsButton" class="settings-button" type="button">설정</button>
         <button id="logoutButton" class="logout-button" type="button">로그아웃</button>
+        <div class="account-team-section">
+          <button id="teamMembersToggle" class="team-members-toggle" type="button" aria-expanded="true">
+            <strong id="teamMembersTitle">내 팀</strong>
+            <span aria-hidden="true">접기</span>
+          </button>
+          <div id="teamMembersBody">
+            <div class="team-summary" id="teamSummary">팀 정보를 불러오는 중...</div>
+            <ul id="teamMembersList"></ul>
+          </div>
+        </div>
       </div>
     </aside>
     <aside class="gps-status-card" id="gpsStatusCard" aria-label="현재 위치 상태">
       <button id="gpsStatusToggle" class="gps-status-toggle" type="button" aria-expanded="true">
-        <strong>현재 위치 상태</strong>
+        <strong><i class="gps-connection-icon" aria-hidden="true"></i>현재 위치 상태</strong>
         <span>
           <em id="gpsStatusLive">대기 중</em>
           <b>접기</b>
@@ -107,16 +117,6 @@
           <strong id="paintedTileCount">칠한 타일 0개</strong>
           <ol id="paintedTileList"></ol>
         </div>
-      </div>
-    </aside>
-    <aside class="team-members-panel" aria-label="같은 팀 가입자">
-      <button id="teamMembersToggle" class="team-members-toggle" type="button" aria-expanded="true">
-        <strong id="teamMembersTitle">내 팀</strong>
-        <span aria-hidden="true">접기</span>
-      </button>
-      <div id="teamMembersBody">
-        <div class="team-summary" id="teamSummary">팀 정보를 불러오는 중...</div>
-        <ul id="teamMembersList"></ul>
       </div>
     </aside>
     <aside class="location-history" aria-label="이동한 위치 기록">
