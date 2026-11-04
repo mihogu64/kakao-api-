@@ -295,8 +295,8 @@ function hasForbiddenCredentialSequence(value) {
 }
 
 function validateSignupCredentials(username, password) {
-  if (!/^[A-Za-z]{5,12}$/.test(username)) {
-    return '닉네임은 영문만 사용해 5~12자로 입력하세요.';
+  if (!/^[A-Za-z0-9]{5,12}$/.test(username)) {
+    return '닉네임은 영문과 숫자를 사용해 5~12자로 입력하세요.';
   }
   if (!/^[A-Za-z0-9!@#$%^&*()_+\-=]+$/.test(password)) {
     return '비밀번호는 영문, 숫자, 허용된 특수문자만 사용할 수 있습니다.';
