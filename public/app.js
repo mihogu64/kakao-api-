@@ -4,10 +4,10 @@ const LOCATION_RECENTER_IDLE_MS = 10000;
 const LOCATION_REQUEST_TIMEOUT_MS = 12000;
 const GPS_CONFIG = {
   maxAccuracyForClaim: 300,
-  maxJumpDistance: 500,
-  maxSpeedMps: 70,
-  maxDisplayJumpDistance: 1000,
-  maxDisplaySpeedMps: 100,
+  maxJumpDistance: 3000,
+  maxSpeedMps: 140,
+  maxDisplayJumpDistance: 3000,
+  maxDisplaySpeedMps: 180,
   minRouteSampleMeters: 8,
   headingTurnThreshold: 45,
 };
@@ -1006,7 +1006,13 @@ function processLocation(position) {
   if (claimable) {
     state.previousClaimLocation = current;
   } else {
-    state.previousClaimLocation = null;
+    const movement = state.previousLocation ? getMovementMetrics(state.previousLocation, current) : null;
+    const canBridgeNextUpdate = movement
+      && movement.distance <= GPS_CONFIG.maxJumpDistance
+      && movement.calculatedSpeed <= GPS_CONFIG.maxSpeedMps;
+    if (!canBridgeNextUpdate) {
+      state.previousClaimLocation = null;
+    }
     updateGpsDebug(displayOutlier ? '위치 튐 의심 · 점령 보류' : 'GPS 정확도 부족 · 점령 보류');
   }
   state.previousLocation = current;
