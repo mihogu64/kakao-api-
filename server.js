@@ -1060,6 +1060,28 @@ function handleApi(req, res, pathname, query) {
     return;
   }
 
+  const adminUserTileDeleteMatch = pathname.match(/^\/api\/dev\/users\/([^/]+)\/tiles\/([^/]+)$/);
+  if (adminUserTileDeleteMatch && req.method === 'DELETE') {
+    const authUser = getAuthUser(req);
+    if (!isAdmin(authUser)) {
+      sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+      return;
+    }
+    const targetUser = getUserById(adminUserTileDeleteMatch[1]);
+    const tileKey = decodeURIComponent(adminUserTileDeleteMatch[2]);
+    const stateTileKey = `${state.currentSeasonKey}:${tileKey}`;
+    const tile = state.tiles.get(stateTileKey);
+    if (!targetUser || !tile || tile.ownerUserId !== targetUser.id) {
+      sendJson(res, 404, { message: '타일 기록을 찾을 수 없습니다.' });
+      return;
+    }
+    state.tiles.delete(stateTileKey);
+    savePersistentState();
+    broadcast('tile-removed', { seasonKey: state.currentSeasonKey, tileKey });
+    sendJson(res, 200, { message: '타일 기록을 삭제했습니다.', tileKey });
+    return;
+  }
+
   if (pathname === '/api/dev/reset-tiles' && req.method === 'POST') {
     const authUser = getAuthUser(req);
     if (!authUser) {

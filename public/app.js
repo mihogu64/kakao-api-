@@ -64,6 +64,10 @@ const els = {
   accountTeam: document.getElementById('accountTeam'),
   adminPanel: document.getElementById('adminPanel'),
   adminUserPanel: document.getElementById('adminUserPanel'),
+  adminTileDetailsPanel: document.getElementById('adminTileDetailsPanel'),
+  adminTileDetailsClose: document.getElementById('adminTileDetailsClose'),
+  adminTileDetailsTitle: document.getElementById('adminTileDetailsTitle'),
+  adminTileDetailsBody: document.getElementById('adminTileDetailsBody'),
   adminLeaderSummary: document.getElementById('adminLeaderSummary'),
   adminLeaderboardList: document.getElementById('adminLeaderboardList'),
   adminResetTilesButton: document.getElementById('adminResetTilesButton'),
@@ -777,25 +781,76 @@ async function syncAdminUsers() {
         return;
       }
       const tileList = document.createElement('ol');
-      payload.tiles.slice(0, 20).forEach((tile) => {
-        const tileItem = document.createElement('li');
-        const time = tile.claimedAt ? new Date(tile.claimedAt).toLocaleString('ko-KR') : '시각 없음';
-        const latitude = Number(tile.centerLat);
-        const longitude = Number(tile.centerLng);
-        const coordinates = Number.isFinite(latitude) && Number.isFinite(longitude)
-          ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
-          : '좌표 없음';
-        tileItem.textContent = `${time} · ${coordinates}`;
-        tileList.appendChild(tileItem);
-      });
+      payload.tiles.slice(0, 3).forEach((tile) => tileList.appendChild(createAdminTileItem(tile, user)));
       details.appendChild(tileList);
-      if (payload.tiles.length > 20) {
-        const more = document.createElement('small');
-        more.textContent = `최근 20개 표시 · 전체 ${payload.tiles.length}개`;
+      if (payload.tiles.length > 3) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.className = 'admin-details-button';
+        more.textContent = `자세히 보기 (${payload.tiles.length - 3}개 더보기)`;
+        more.addEventListener('click', () => openAdminTileDetails(payload.user, payload.tiles));
         details.appendChild(more);
       }
     } catch (error) {
       details.textContent = error.message;
+    }
+  }
+
+  function createAdminTileItem(tile, user) {
+    const tileItem = document.createElement('li');
+    const time = tile.claimedAt ? new Date(tile.claimedAt).toLocaleString('ko-KR') : '시각 없음';
+    const latitude = Number(tile.centerLat);
+    const longitude = Number(tile.centerLng);
+    const coordinates = Number.isFinite(latitude) && Number.isFinite(longitude)
+      ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+      : '좌표 없음';
+    const label = document.createElement('span');
+    label.textContent = `${time} · ${coordinates}`;
+    const actions = document.createElement('span');
+    actions.className = 'admin-tile-actions';
+    const moveButton = document.createElement('button');
+    moveButton.type = 'button';
+    moveButton.className = 'admin-details-button';
+    moveButton.textContent = '이동';
+    moveButton.addEventListener('click', () => moveMapToTile({ lat: latitude, lng: longitude }));
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'admin-delete-button';
+    deleteButton.textContent = '삭제';
+    deleteButton.addEventListener('click', () => deleteAdminTile(user, tile));
+    actions.append(moveButton, deleteButton);
+    tileItem.append(label, actions);
+    return tileItem;
+  }
+
+  function openAdminTileDetails(user, tiles) {
+    els.adminTileDetailsTitle.textContent = `${user.username} · 전체 타일 ${tiles.length}개`;
+    els.adminTileDetailsBody.innerHTML = '';
+    const list = document.createElement('ol');
+    tiles.forEach((tile) => list.appendChild(createAdminTileItem(tile, user)));
+    els.adminTileDetailsBody.appendChild(list);
+    els.adminTileDetailsPanel.hidden = false;
+  }
+
+  async function deleteAdminTile(user, tile) {
+    if (!window.confirm('이 타일 기록을 삭제할까요?')) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/dev/users/${encodeURIComponent(user.id)}/tiles/${encodeURIComponent(tile.tileKey)}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+      const payload = await response.json();
+      if (handleUnauthorized(response) || !response.ok) {
+        throw new Error(payload.message || '타일 삭제에 실패했습니다.');
+      }
+      state.sharedTiles.delete(tile.tileKey);
+      renderGrid(state.map);
+      syncAdminUsers();
+      syncSharedTiles();
+    } catch (error) {
+      window.alert(error.message);
     }
   }
 }
@@ -1677,6 +1732,9 @@ els.rankingAnnouncementClose.addEventListener('click', () => {
 els.rankingAnnouncementMore.addEventListener('click', () => {
   state.rankingAnnouncementExpanded = !state.rankingAnnouncementExpanded;
   renderRankingAnnouncement({ rankingLeaderboard: state.rankingAnnouncementLast });
+});
+els.adminTileDetailsClose.addEventListener('click', () => {
+  els.adminTileDetailsPanel.hidden = true;
 });
 els.settingsButton.addEventListener('click', openSettings);
 els.settingsCloseButton.addEventListener('click', closeSettings);

@@ -2648,6 +2648,79 @@ html[data-theme="system"] .team-option {
   font-size: 10px;
 }
 
+.admin-tile-details-panel {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 26;
+  width: min(360px, calc(100vw - 36px));
+  max-height: 42vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid var(--map-line);
+  border-radius: 10px;
+  color: var(--map-ink);
+  background: var(--map-panel);
+  box-shadow: var(--map-shadow);
+  backdrop-filter: blur(8px);
+  font-size: 11px;
+}
+
+.admin-tile-details-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: 0;
+  color: var(--map-muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.admin-tile-details-panel > strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.admin-tile-details-panel ol {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.admin-tile-details-panel li,
+.admin-user-details li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-user-details li > span:first-child,
+.admin-tile-details-panel li > span:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-tile-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.admin-details-button {
+  padding: 3px 6px;
+  border: 1px solid var(--map-line);
+  border-radius: 4px;
+  color: var(--map-ink);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
 .admin-user-section li {
   display: flex;
   align-items: center;
@@ -2698,7 +2771,6 @@ html[data-theme="system"] .team-option {
 }
 
 .admin-user-details li {
-  display: list-item;
   margin: 2px 0;
   white-space: normal;
 }
@@ -2716,6 +2788,15 @@ html[data-theme="system"] .team-option {
     width: 170px;
     height: 45vh;
     padding: 8px;
+    font-size: 9px;
+  }
+
+  .admin-tile-details-panel {
+    right: 10px;
+    bottom: 10px;
+    width: calc(100vw - 20px);
+    max-height: 45vh;
+    padding: 10px;
     font-size: 9px;
   }
 
