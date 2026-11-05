@@ -841,20 +841,21 @@ async function startAdminRankingNow() {
       throw new Error(payload.message || '순위를 시작하지 못했습니다.');
     }
 
-    async function endAdminRankingNow() {
-      try {
-        const response = await fetch('/api/dev/ranking/end-now', {
-          method: 'POST',
-          headers: authHeaders(),
-        });
-        const payload = await response.json();
-        if (handleUnauthorized(response) || !response.ok) {
-          throw new Error(payload.message || '순위를 종료하지 못했습니다.');
-        }
-        renderAdminRanking(payload);
-      } catch (error) {
-        window.alert(error.message);
-      }
+    renderAdminRanking(payload);
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+async function endAdminRankingNow() {
+  try {
+    const response = await fetch('/api/dev/ranking/end-now', {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    const payload = await response.json();
+    if (handleUnauthorized(response) || !response.ok) {
+      throw new Error(payload.message || '순위를 종료하지 못했습니다.');
     }
     renderAdminRanking(payload);
   } catch (error) {
