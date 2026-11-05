@@ -38,6 +38,7 @@ const state = {
   lastServerTileResetAt: null,
   deleteMode: false,
   syncTimer: null,
+  rankingClockTimer: null,
   gridPolygons: [],
   renderTimer: null,
   playerPosition: null,
@@ -45,6 +46,7 @@ const state = {
   autoMoveTimer: null,
   mockDirection: 'right',
   role: 'user',
+  rankingContest: null,
 };
 
 const els = {
@@ -93,6 +95,7 @@ const els = {
   locationHistoryList: document.getElementById('locationHistoryList'),
   tileToast: document.getElementById('tileToast'),
   gridStatus: document.getElementById('gridStatus'),
+  rankingTimer: document.getElementById('rankingTimer'),
   zoomInButton: document.getElementById('zoomInButton'),
   zoomOutButton: document.getElementById('zoomOutButton'),
   leaderboardList: document.getElementById('leaderboardList'),
@@ -894,6 +897,8 @@ async function syncLeaderboard() {
       return;
     }
     const payload = await response.json();
+    state.rankingContest = payload.rankingContest || null;
+    renderRankingTimer();
     const leader = payload.leaderboard?.[0];
     if (state.role === 'admin' && leader) {
       els.adminLeaderSummary.textContent = `현재 1위 · ${leader.name} ${leader.tiles}칸`;
@@ -910,6 +915,7 @@ async function syncLeaderboard() {
         els.adminLeaderboardList.appendChild(item);
       });
     }
+
     els.leaderboardList.innerHTML = '';
     payload.leaderboard.forEach((team, index) => {
       const item = document.createElement('li');
@@ -939,6 +945,42 @@ async function syncLeaderboard() {
   } catch (error) {
     // Leaderboard polling can recover on the next interval.
   }
+}
+
+function formatRemainingTime(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (days) {
+    return `${days}일 ${String(hours).padStart(2, '0')}시간`;
+  }
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function renderRankingTimer() {
+  const contest = state.rankingContest;
+  if (!contest) {
+    els.rankingTimer.hidden = true;
+    return;
+  }
+  els.rankingTimer.hidden = false;
+  if (contest.announcedAt) {
+    els.rankingTimer.textContent = '순위 발표 완료';
+    els.rankingTimer.className = 'ranking-timer complete';
+    return;
+  }
+  if (!contest.startedAt) {
+    const remaining = new Date(contest.scheduledAt).getTime() - Date.now();
+    els.rankingTimer.textContent = remaining <= 0
+      ? '집계 시작 준비 중'
+      : `순위 집계 시작까지 ${formatRemainingTime(remaining)}`;
+    els.rankingTimer.className = 'ranking-timer scheduled';
+    return;
+  }
+  els.rankingTimer.textContent = '순위 집계 진행 중';
+  els.rankingTimer.className = 'ranking-timer active';
 }
 
 function toggleLeaderboard() {
@@ -1534,6 +1576,7 @@ function initMap() {
         syncAdminRanking();
       }
     }, 5000);
+    state.rankingClockTimer = window.setInterval(renderRankingTimer, 1000);
   });
 }
 
