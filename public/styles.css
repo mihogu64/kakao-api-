@@ -1394,7 +1394,7 @@ body {
 .mini-popover .team-list,
 .mini-popover .team-members,
 .mini-popover .team-requests {
-  max-height: 100%;
+  max-height: calc(42vh - 48px);
 }
 
 .team-row .primary-btn,
@@ -2472,12 +2472,12 @@ html[data-theme="system"] .team-option {
 
 .admin-user-panel {
   position: absolute;
-  top: calc(18px + 50vh + 10px);
-  left: 18px;
+  right: 18px;
+  bottom: 18px;
   z-index: 25;
   width: 220px;
-  max-height: calc(50vh - 10px);
-  overflow-y: auto;
+  max-height: 42vh;
+  overflow: hidden;
   box-sizing: border-box;
   padding: 12px;
   border: 1px solid var(--map-line);
@@ -2648,6 +2648,23 @@ html[data-theme="system"] .team-option {
   font-size: 10px;
 }
 
+.admin-panel-toggle {
+  padding: 2px 5px;
+  border: 1px solid var(--map-line);
+  border-radius: 4px;
+  color: var(--map-muted);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+}
+
+.admin-user-panel > .admin-panel-header > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .admin-tile-details-panel {
   position: absolute;
   right: 18px;
@@ -2791,6 +2808,10 @@ html[data-theme="system"] .team-option {
     font-size: 9px;
   }
 
+  .admin-user-panel ul {
+    max-height: calc(38vh - 48px);
+  }
+
   .admin-tile-details-panel {
     right: 10px;
     bottom: 10px;
@@ -2801,10 +2822,10 @@ html[data-theme="system"] .team-option {
   }
 
   .admin-user-panel {
-    top: calc(10px + 45vh + 8px);
-    left: 10px;
+    right: 10px;
+    bottom: 10px;
     width: 170px;
-    max-height: calc(45vh - 8px);
+    max-height: 38vh;
     padding: 8px;
     font-size: 9px;
   }

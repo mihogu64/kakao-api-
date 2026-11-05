@@ -51,6 +51,8 @@ const state = {
   rankingAnnouncementLast: [],
   rankingAnnouncementDismissedAt: null,
   adminExpandedUserId: null,
+  adminPanelCollapsed: false,
+  adminUserPanelCollapsed: false,
 };
 
 const els = {
@@ -63,7 +65,11 @@ const els = {
   accountUsername: document.getElementById('accountUsername'),
   accountTeam: document.getElementById('accountTeam'),
   adminPanel: document.getElementById('adminPanel'),
+  adminPanelToggle: document.getElementById('adminPanelToggle'),
+  adminPanelBody: document.getElementById('adminPanelBody'),
   adminUserPanel: document.getElementById('adminUserPanel'),
+  adminUserPanelToggle: document.getElementById('adminUserPanelToggle'),
+  adminUserPanelBody: document.getElementById('adminUserPanelBody'),
   adminTileDetailsPanel: document.getElementById('adminTileDetailsPanel'),
   adminTileDetailsClose: document.getElementById('adminTileDetailsClose'),
   adminTileDetailsTitle: document.getElementById('adminTileDetailsTitle'),
@@ -1735,6 +1741,18 @@ els.rankingAnnouncementMore.addEventListener('click', () => {
 });
 els.adminTileDetailsClose.addEventListener('click', () => {
   els.adminTileDetailsPanel.hidden = true;
+});
+els.adminPanelToggle.addEventListener('click', () => {
+  state.adminPanelCollapsed = !state.adminPanelCollapsed;
+  els.adminPanelBody.hidden = state.adminPanelCollapsed;
+  els.adminPanelToggle.textContent = state.adminPanelCollapsed ? '펼치기' : '접기';
+  els.adminPanelToggle.setAttribute('aria-expanded', String(!state.adminPanelCollapsed));
+});
+els.adminUserPanelToggle.addEventListener('click', () => {
+  state.adminUserPanelCollapsed = !state.adminUserPanelCollapsed;
+  els.adminUserPanelBody.hidden = state.adminUserPanelCollapsed;
+  els.adminUserPanelToggle.textContent = state.adminUserPanelCollapsed ? '펼치기' : '접기';
+  els.adminUserPanelToggle.setAttribute('aria-expanded', String(!state.adminUserPanelCollapsed));
 });
 els.settingsButton.addEventListener('click', openSettings);
 els.settingsCloseButton.addEventListener('click', closeSettings);

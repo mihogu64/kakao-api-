@@ -115,31 +115,38 @@
     <aside id="adminPanel" class="admin-panel" hidden aria-label="관리자 관리">
       <div class="admin-panel-header">
         <strong>관리자</strong>
-        <span>관리 도구</span>
+        <button id="adminPanelToggle" class="admin-panel-toggle" type="button" aria-expanded="true">접기</button>
       </div>
-      <div id="adminLeaderSummary" class="admin-leader-summary">1위 팀을 불러오는 중...</div>
-      <div class="admin-team-leaderboard">
-        <strong>팀별 점령 타일</strong>
-        <ol id="adminLeaderboardList"></ol>
-      </div>
-      <button id="adminResetTilesButton" class="admin-action-button danger" type="button">전체 타일 초기화</button>
-      <div class="admin-ranking-section">
-        <strong>순위 발표</strong>
-        <small id="adminRankingStatus">언제부터 시작하고 언제까지 할지 정하세요.</small>
-        <label class="admin-ranking-label">시작 <input id="adminRankingStartTime" type="datetime-local" /></label>
-        <label class="admin-ranking-label">종료 <input id="adminRankingEndTime" type="datetime-local" /></label>
-        <button id="adminRankingScheduleButton" class="admin-action-button" type="button">시간 설정</button>
-        <button id="adminRankingStartNowButton" class="admin-action-button" type="button">지금부터 시작</button>
-        <button id="adminRankingEndNowButton" class="admin-action-button" type="button">지금까지 끝</button>
-        <ol id="adminRankingResults"></ol>
+      <div id="adminPanelBody">
+        <div id="adminLeaderSummary" class="admin-leader-summary">1위 팀을 불러오는 중...</div>
+        <div class="admin-team-leaderboard">
+          <strong>팀별 점령 타일</strong>
+          <ol id="adminLeaderboardList"></ol>
+        </div>
+        <button id="adminResetTilesButton" class="admin-action-button danger" type="button">전체 타일 초기화</button>
+        <div class="admin-ranking-section">
+          <strong>순위 발표</strong>
+          <small id="adminRankingStatus">언제부터 시작하고 언제까지 할지 정하세요.</small>
+          <label class="admin-ranking-label">시작 <input id="adminRankingStartTime" type="datetime-local" /></label>
+          <label class="admin-ranking-label">종료 <input id="adminRankingEndTime" type="datetime-local" /></label>
+          <button id="adminRankingScheduleButton" class="admin-action-button" type="button">시간 설정</button>
+          <button id="adminRankingStartNowButton" class="admin-action-button" type="button">지금부터 시작</button>
+          <button id="adminRankingEndNowButton" class="admin-action-button" type="button">지금까지 끝</button>
+          <ol id="adminRankingResults"></ol>
+        </div>
       </div>
     </aside>
     <aside id="adminUserPanel" class="admin-user-panel" hidden aria-label="계정 관리">
       <div class="admin-panel-header">
         <strong>계정 관리</strong>
-        <span id="adminUserSummary">계정 목록을 불러오는 중...</span>
+        <span>
+          <small id="adminUserSummary">계정 목록을 불러오는 중...</small>
+          <button id="adminUserPanelToggle" class="admin-panel-toggle" type="button" aria-expanded="true">접기</button>
+        </span>
       </div>
-      <ul id="adminUserList"></ul>
+      <div id="adminUserPanelBody">
+        <ul id="adminUserList"></ul>
+      </div>
     </aside>
     <aside id="adminTileDetailsPanel" class="admin-tile-details-panel" hidden aria-label="전체 타일 기록">
       <button id="adminTileDetailsClose" class="admin-tile-details-close" type="button" aria-label="타일 기록 닫기">×</button>
