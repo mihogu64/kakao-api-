@@ -847,7 +847,9 @@ function handleApi(req, res, pathname, query) {
       return;
     }
     const users = Array.from(state.users.values()).map((user) => ({
+      id: user.id,
       username: user.username,
+      role: user.role || 'user',
       createdAt: user.createdAt || null,
     }));
     sendJson(res, 200, { users });

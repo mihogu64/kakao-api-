@@ -104,6 +104,18 @@
         </div>
       </div>
     </aside>
+    <aside id="adminPanel" class="admin-panel" hidden aria-label="관리자 관리">
+      <div class="admin-panel-header">
+        <strong>관리자</strong>
+        <span>관리 도구</span>
+      </div>
+      <button id="adminResetTilesButton" class="admin-action-button danger" type="button">전체 타일 초기화</button>
+      <div class="admin-user-section">
+        <strong>계정 관리</strong>
+        <small id="adminUserSummary">계정 목록을 불러오는 중...</small>
+        <ul id="adminUserList"></ul>
+      </div>
+    </aside>
     <aside class="gps-status-card" id="gpsStatusCard" aria-label="현재 위치 상태">
       <button id="gpsStatusToggle" class="gps-status-toggle" type="button" aria-expanded="true">
         <strong><i class="gps-connection-icon" aria-hidden="true"></i>현재 위치 상태</strong>

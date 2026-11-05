@@ -44,6 +44,7 @@ const state = {
   mockMode: false,
   autoMoveTimer: null,
   mockDirection: 'right',
+  role: 'user',
 };
 
 const els = {
@@ -55,6 +56,10 @@ const els = {
   accountBody: document.getElementById('accountBody'),
   accountUsername: document.getElementById('accountUsername'),
   accountTeam: document.getElementById('accountTeam'),
+  adminPanel: document.getElementById('adminPanel'),
+  adminResetTilesButton: document.getElementById('adminResetTilesButton'),
+  adminUserSummary: document.getElementById('adminUserSummary'),
+  adminUserList: document.getElementById('adminUserList'),
   seasonButton: document.getElementById('seasonButton'),
   seasonModal: document.getElementById('seasonModal'),
   seasonCloseButton: document.getElementById('seasonCloseButton'),
@@ -127,6 +132,13 @@ function renderAccountInfo() {
   els.accountUsername.textContent = state.username || '사용자';
   els.accountTeam.textContent = state.teamId ? `${state.teamId} 팀` : '팀 정보 없음';
   els.accountTeam.style.color = state.teamColor || '';
+}
+
+function renderAdminPanel() {
+  els.adminPanel.hidden = state.role !== 'admin';
+  if (state.role === 'admin') {
+    syncAdminUsers();
+  }
 }
 
 function toggleAccountPanel() {
@@ -402,8 +414,10 @@ async function submitAuth(event) {
     localStorage.setItem('territory.token', payload.token);
     state.userId = payload.user.id;
     state.username = payload.user.username;
+    state.role = payload.user.role || 'user';
     state.teamColor = payload.team?.color || null;
     renderAccountInfo();
+    renderAdminPanel();
     state.teamId = payload.user.teamId || '';
     els.authScreen.hidden = true;
     els.gameScreen.hidden = false;
@@ -430,9 +444,11 @@ async function restoreSession() {
     const payload = await response.json();
     state.userId = payload.user.id;
     state.username = payload.user.username;
+    state.role = payload.user.role || 'user';
     state.teamId = payload.user.teamId || '';
     state.teamColor = payload.team?.color || null;
     renderAccountInfo();
+    renderAdminPanel();
     els.authScreen.hidden = true;
     els.gameScreen.hidden = false;
     initMap();
@@ -652,6 +668,86 @@ async function syncTeamMembers() {
     });
   } catch (error) {
     // Team member polling can recover on the next interval.
+  }
+}
+
+async function syncAdminUsers() {
+  if (state.role !== 'admin') {
+    return;
+  }
+  try {
+    const response = await fetch('/api/dev/users', { headers: authHeaders() });
+    if (handleUnauthorized(response) || !response.ok) {
+      return;
+    }
+    const payload = await response.json();
+    const users = payload.users || [];
+    els.adminUserSummary.textContent = `등록 계정 ${users.length}명`;
+    els.adminUserList.innerHTML = '';
+    users.forEach((user) => {
+      const item = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = user.role === 'admin' ? `${user.username} (관리자)` : user.username;
+      item.appendChild(name);
+      if (user.role !== 'admin') {
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'admin-delete-button';
+        deleteButton.textContent = '삭제';
+        deleteButton.addEventListener('click', () => deleteAdminUser(user));
+        item.appendChild(deleteButton);
+      }
+      els.adminUserList.appendChild(item);
+    });
+  } catch (error) {
+    els.adminUserSummary.textContent = '계정 목록을 불러오지 못했습니다.';
+  }
+}
+
+async function resetTilesAsAdmin() {
+  if (!window.confirm('모든 팀의 점령 타일을 초기화할까요?')) {
+    return;
+  }
+  els.adminResetTilesButton.disabled = true;
+  try {
+    const response = await fetch('/api/dev/reset-tiles', {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    const payload = await response.json();
+    if (handleUnauthorized(response) || !response.ok) {
+      throw new Error(payload.message || '타일 초기화에 실패했습니다.');
+    }
+    applyServerTileReset(payload.tileResetAt || null);
+    state.sharedTiles.clear();
+    renderGrid(state.map);
+    showTileToast('전체 타일을 초기화했습니다.', 'success');
+  } catch (error) {
+    window.alert(error.message);
+  } finally {
+    els.adminResetTilesButton.disabled = false;
+  }
+}
+
+async function deleteAdminUser(user) {
+  if (!window.confirm(`${user.username} 계정과 해당 타일을 삭제할까요?`)) {
+    return;
+  }
+  try {
+    const response = await fetch('/api/dev/delete-account', {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id }),
+    });
+    const payload = await response.json();
+    if (handleUnauthorized(response) || !response.ok) {
+      throw new Error(payload.message || '계정 삭제에 실패했습니다.');
+    }
+    syncAdminUsers();
+    syncTeamMembers();
+    syncSharedTiles();
+  } catch (error) {
+    window.alert(error.message);
   }
 }
 
@@ -1289,6 +1385,7 @@ els.loginTab.addEventListener('click', () => setAuthMode('login'));
 els.signupTab.addEventListener('click', () => setAuthMode('signup'));
 els.authForm.addEventListener('submit', submitAuth);
 els.accountToggle.addEventListener('click', toggleAccountPanel);
+els.adminResetTilesButton.addEventListener('click', resetTilesAsAdmin);
 els.settingsButton.addEventListener('click', openSettings);
 els.settingsCloseButton.addEventListener('click', closeSettings);
 els.seasonButton.addEventListener('click', openSeasonModal);

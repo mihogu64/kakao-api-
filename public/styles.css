@@ -2357,6 +2357,110 @@ html[data-theme="system"] .team-option {
   }
 }
 
+.admin-panel {
+  position: absolute;
+  top: 72px;
+  right: 18px;
+  z-index: 25;
+  width: 220px;
+  padding: 12px;
+  border: 1px solid var(--map-line);
+  border-radius: 10px;
+  color: var(--map-ink);
+  background: var(--map-panel);
+  box-shadow: var(--map-shadow);
+  backdrop-filter: blur(8px);
+  font-size: 12px;
+}
+
+.admin-panel-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.admin-panel-header strong,
+.admin-user-section > strong {
+  color: var(--map-ink);
+}
+
+.admin-panel-header span,
+.admin-user-section small {
+  color: var(--map-muted);
+  font-size: 10px;
+}
+
+.admin-action-button,
+.admin-delete-button {
+  border: 1px solid var(--map-line);
+  border-radius: 5px;
+  color: var(--map-ink);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.admin-action-button {
+  width: 100%;
+  padding: 7px;
+}
+
+.admin-action-button.danger {
+  color: #a33a32;
+  border-color: rgba(163, 58, 50, 0.3);
+}
+
+.admin-user-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--map-line);
+}
+
+.admin-user-section > strong,
+.admin-user-section small {
+  display: block;
+}
+
+.admin-user-section ul {
+  display: grid;
+  gap: 5px;
+  max-height: 150px;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.admin-user-section li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.admin-delete-button {
+  padding: 2px 5px;
+  color: #a33a32;
+  font-size: 10px;
+}
+
+@media (max-width: 620px) {
+  .admin-panel {
+    top: 52px;
+    right: 10px;
+    width: 170px;
+    padding: 8px;
+    font-size: 9px;
+  }
+
+  .admin-panel-header span,
+  .admin-user-section small,
+  .admin-delete-button {
+    font-size: 8px;
+  }
+}
+
 @media (max-width: 620px) {
   .own-team-capture-card {
     width: 150px;
