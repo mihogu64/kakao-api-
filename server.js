@@ -922,59 +922,6 @@ function handleApi(req, res, pathname, query) {
       return;
     }
 
-    if (pathname === '/api/dev/ranking' && req.method === 'GET') {
-      if (!isAdmin(getAuthUser(req))) {
-        sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
-        return;
-      }
-      const rankingStatus = getRankingContestStatus(new Date());
-      sendJson(res, 200, rankingStatus);
-      return;
-    }
-
-    if (pathname === '/api/dev/ranking/schedule' && req.method === 'POST') {
-      if (!isAdmin(getAuthUser(req))) {
-        sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
-        return;
-      }
-      parseBody(req).then((payload) => {
-        const scheduledAt = new Date(String(payload.scheduledAt || '')).getTime();
-        if (!Number.isFinite(scheduledAt) || scheduledAt <= Date.now()) {
-          sendJson(res, 400, { message: '미래 시간을 정해야 합니다.' });
-          return;
-        }
-        state.rankingContest = {
-          scheduledAt: new Date(scheduledAt).toISOString(),
-          startedAt: null,
-          announcedAt: null,
-          status: 'SCHEDULED',
-        };
-        savePersistentState();
-        broadcast('ranking-updated', { contest: state.rankingContest, leaderboard: [] });
-        sendJson(res, 200, getRankingContestStatus());
-      }).catch((error) => sendJson(res, 400, { message: error.message }));
-      return;
-    }
-
-    if (pathname === '/api/dev/ranking/announce' && req.method === 'POST') {
-      if (!isAdmin(getAuthUser(req))) {
-        sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
-        return;
-      }
-      const contest = activateRankingContest(new Date());
-      if (!contest?.startedAt) {
-        sendJson(res, 400, { message: '순위 집계가 아직 시작되지 않았습니다.' });
-        return;
-      }
-      if (!contest.announcedAt) {
-        contest.announcedAt = nowIso();
-        contest.status = 'ANNOUNCED';
-        savePersistentState();
-        broadcast('ranking-updated', { contest, leaderboard: getRankingLeaderboard() });
-      }
-      sendJson(res, 200, getRankingContestStatus());
-      return;
-    }
     const users = Array.from(state.users.values())
       .filter((user) => user.id !== authUser.id)
       .map((user) => ({
@@ -984,6 +931,59 @@ function handleApi(req, res, pathname, query) {
       createdAt: user.createdAt || null,
       }));
     sendJson(res, 200, { users });
+    return;
+  }
+
+  if (pathname === '/api/dev/ranking' && req.method === 'GET') {
+    if (!isAdmin(getAuthUser(req))) {
+      sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+      return;
+    }
+    sendJson(res, 200, getRankingContestStatus(new Date()));
+    return;
+  }
+
+  if (pathname === '/api/dev/ranking/schedule' && req.method === 'POST') {
+    if (!isAdmin(getAuthUser(req))) {
+      sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+      return;
+    }
+    parseBody(req).then((payload) => {
+      const scheduledAt = new Date(String(payload.scheduledAt || '')).getTime();
+      if (!Number.isFinite(scheduledAt) || scheduledAt <= Date.now()) {
+        sendJson(res, 400, { message: '미래 시간을 정해야 합니다.' });
+        return;
+      }
+      state.rankingContest = {
+        scheduledAt: new Date(scheduledAt).toISOString(),
+        startedAt: null,
+        announcedAt: null,
+        status: 'SCHEDULED',
+      };
+      savePersistentState();
+      broadcast('ranking-updated', { contest: state.rankingContest, leaderboard: [] });
+      sendJson(res, 200, getRankingContestStatus());
+    }).catch((error) => sendJson(res, 400, { message: error.message }));
+    return;
+  }
+
+  if (pathname === '/api/dev/ranking/announce' && req.method === 'POST') {
+    if (!isAdmin(getAuthUser(req))) {
+      sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+      return;
+    }
+    const contest = activateRankingContest(new Date());
+    if (!contest?.startedAt) {
+      sendJson(res, 400, { message: '순위 집계가 아직 시작되지 않았습니다.' });
+      return;
+    }
+    if (!contest.announcedAt) {
+      contest.announcedAt = nowIso();
+      contest.status = 'ANNOUNCED';
+      savePersistentState();
+      broadcast('ranking-updated', { contest, leaderboard: getRankingLeaderboard() });
+    }
+    sendJson(res, 200, getRankingContestStatus());
     return;
   }
 
