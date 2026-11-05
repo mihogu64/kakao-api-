@@ -2453,6 +2453,44 @@ html[data-theme="system"] .team-option {
   border-top: 1px solid var(--map-line);
 }
 
+.admin-ranking-section {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--map-line);
+}
+
+.admin-ranking-section > strong,
+.admin-ranking-section small {
+  color: var(--map-ink);
+}
+
+.admin-ranking-section small {
+  color: var(--map-muted);
+  font-size: 10px;
+}
+
+.admin-ranking-section input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px;
+  border: 1px solid var(--map-line);
+  border-radius: 5px;
+  color: var(--map-ink);
+  background: transparent;
+  font: inherit;
+}
+
+.admin-ranking-section ol {
+  display: grid;
+  gap: 3px;
+  margin: 3px 0 0;
+  padding-left: 18px;
+  color: var(--map-muted);
+  font-size: 10px;
+}
+
 .admin-user-section > strong,
 .admin-user-section small {
   display: block;

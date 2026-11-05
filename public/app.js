@@ -60,6 +60,11 @@ const els = {
   adminLeaderSummary: document.getElementById('adminLeaderSummary'),
   adminLeaderboardList: document.getElementById('adminLeaderboardList'),
   adminResetTilesButton: document.getElementById('adminResetTilesButton'),
+  adminRankingStatus: document.getElementById('adminRankingStatus'),
+  adminRankingTime: document.getElementById('adminRankingTime'),
+  adminRankingScheduleButton: document.getElementById('adminRankingScheduleButton'),
+  adminRankingAnnounceButton: document.getElementById('adminRankingAnnounceButton'),
+  adminRankingResults: document.getElementById('adminRankingResults'),
   adminUserSummary: document.getElementById('adminUserSummary'),
   adminUserList: document.getElementById('adminUserList'),
   seasonButton: document.getElementById('seasonButton'),
@@ -146,6 +151,7 @@ function renderAdminPanel() {
   els.gpsPaintedSummary.hidden = state.role === 'admin';
   if (state.role === 'admin') {
     syncAdminUsers();
+    syncAdminRanking();
   }
 }
 
@@ -678,6 +684,7 @@ async function syncAdminUsers() {
   if (state.role !== 'admin') {
     return;
   }
+
   try {
     const response = await fetch('/api/dev/users', { headers: authHeaders() });
     if (handleUnauthorized(response) || !response.ok) {
@@ -756,6 +763,80 @@ async function syncAdminUsers() {
     } catch (error) {
       details.textContent = error.message;
     }
+  }
+}
+
+function renderAdminRanking(payload) {
+  const contest = payload.contest;
+  if (!contest) {
+    els.adminRankingStatus.textContent = '발표 시간을 정하세요.';
+    els.adminRankingResults.innerHTML = '';
+    return;
+  }
+  const formatTime = (value) => new Date(value).toLocaleString('ko-KR');
+  els.adminRankingStatus.textContent = contest.announcedAt
+    ? `발표 완료 · ${formatTime(contest.announcedAt)}`
+    : contest.startedAt
+      ? `집계 중 · 시작 ${formatTime(contest.startedAt)}`
+      : `예약됨 · ${formatTime(contest.scheduledAt)}`;
+  els.adminRankingResults.innerHTML = '';
+  (payload.leaderboard || []).forEach((user, index) => {
+    const item = document.createElement('li');
+    item.textContent = `${index + 1}위 ${user.username} · ${user.tiles}칸`;
+    els.adminRankingResults.appendChild(item);
+  });
+}
+
+async function syncAdminRanking() {
+  if (state.role !== 'admin') {
+    return;
+  }
+  try {
+    const response = await fetch('/api/dev/ranking', { headers: authHeaders() });
+    if (handleUnauthorized(response) || !response.ok) {
+      return;
+    }
+    renderAdminRanking(await response.json());
+  } catch (error) {
+    els.adminRankingStatus.textContent = '순위 정보를 불러오지 못했습니다.';
+  }
+}
+
+async function scheduleAdminRanking() {
+  if (!els.adminRankingTime.value) {
+    window.alert('순위 집계 시작 시간을 정하세요.');
+    return;
+  }
+  const scheduledAt = new Date(els.adminRankingTime.value).toISOString();
+  try {
+    const response = await fetch('/api/dev/ranking/schedule', {
+      method: 'POST',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scheduledAt }),
+    });
+    const payload = await response.json();
+    if (handleUnauthorized(response) || !response.ok) {
+      throw new Error(payload.message || '순위 시간을 예약하지 못했습니다.');
+    }
+    renderAdminRanking(payload);
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+async function announceAdminRanking() {
+  try {
+    const response = await fetch('/api/dev/ranking/announce', {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    const payload = await response.json();
+    if (handleUnauthorized(response) || !response.ok) {
+      throw new Error(payload.message || '순위를 발표하지 못했습니다.');
+    }
+    renderAdminRanking(payload);
+  } catch (error) {
+    window.alert(error.message);
   }
 }
 
@@ -1448,6 +1529,10 @@ function initMap() {
       syncTeamMembers();
       syncLeaderboard();
       syncSharedTiles();
+      if (state.role === 'admin') {
+        syncAdminUsers();
+        syncAdminRanking();
+      }
     }, 5000);
   });
 }
@@ -1457,6 +1542,8 @@ els.signupTab.addEventListener('click', () => setAuthMode('signup'));
 els.authForm.addEventListener('submit', submitAuth);
 els.accountToggle.addEventListener('click', toggleAccountPanel);
 els.adminResetTilesButton.addEventListener('click', resetTilesAsAdmin);
+els.adminRankingScheduleButton.addEventListener('click', scheduleAdminRanking);
+els.adminRankingAnnounceButton.addEventListener('click', announceAdminRanking);
 els.settingsButton.addEventListener('click', openSettings);
 els.settingsCloseButton.addEventListener('click', closeSettings);
 els.seasonButton.addEventListener('click', openSeasonModal);

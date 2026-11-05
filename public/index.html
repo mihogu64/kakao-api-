@@ -115,6 +115,14 @@
         <ol id="adminLeaderboardList"></ol>
       </div>
       <button id="adminResetTilesButton" class="admin-action-button danger" type="button">전체 타일 초기화</button>
+      <div class="admin-ranking-section">
+        <strong>순위 발표</strong>
+        <small id="adminRankingStatus">발표 시간을 정하세요.</small>
+        <input id="adminRankingTime" type="datetime-local" aria-label="순위 집계 시작 시간" />
+        <button id="adminRankingScheduleButton" class="admin-action-button" type="button">시간 예약</button>
+        <button id="adminRankingAnnounceButton" class="admin-action-button" type="button">지금 순위 발표</button>
+        <ol id="adminRankingResults"></ol>
+      </div>
       <div class="admin-user-section">
         <strong>계정 관리</strong>
         <small id="adminUserSummary">계정 목록을 불러오는 중...</small>

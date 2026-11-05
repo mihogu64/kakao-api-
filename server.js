@@ -47,6 +47,7 @@ const state = {
   memberships: new Map(),
   tiles: new Map(),
   seasons: new Map(),
+  rankingContest: null,
   clients: new Set(),
 };
 
@@ -58,6 +59,7 @@ function getPersistentSnapshot() {
     teams: Array.from(state.teams.values()),
     tiles: Array.from(state.tiles.values()),
     seasons: Array.from(state.seasons.values()),
+    rankingContest: state.rankingContest,
   };
 }
 
@@ -108,6 +110,7 @@ function applyPersistentSnapshot(snapshot) {
   (snapshot.seasons || []).forEach((season) => state.seasons.set(season.seasonKey, season));
   state.currentSeasonKey = snapshot.currentSeasonKey || null;
   state.tileResetAt = snapshot.tileResetAt || null;
+  state.rankingContest = snapshot.rankingContest || null;
 }
 
 function savePersistentState() {
@@ -252,6 +255,49 @@ function getSeasonPhase(date = new Date()) {
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function getRankingLeaderboard() {
+  const contest = state.rankingContest;
+  if (!contest?.startedAt) {
+    return [];
+  }
+  const start = new Date(contest.startedAt).getTime();
+  const end = contest.announcedAt ? new Date(contest.announcedAt).getTime() : Date.now();
+  return Array.from(state.users.values())
+    .map((user) => ({
+      id: user.id,
+      username: user.username,
+      tiles: Array.from(state.tiles.values()).filter((tile) => tile.ownerUserId === user.id
+        && new Date(tile.claimedAt || 0).getTime() >= start
+        && new Date(tile.claimedAt || 0).getTime() <= end).length,
+    }))
+    .filter((user) => user.tiles > 0)
+    .sort((left, right) => right.tiles - left.tiles)
+    .slice(0, 10);
+}
+
+function activateRankingContest(date = new Date()) {
+  const contest = state.rankingContest;
+  if (!contest || contest.startedAt || new Date(contest.scheduledAt).getTime() > date.getTime()) {
+    return contest;
+  }
+  contest.startedAt = date.toISOString();
+  contest.status = 'PLAYING';
+  state.tiles.clear();
+  state.tileResetAt = contest.startedAt;
+  savePersistentState();
+  broadcast('tiles-reset', { at: state.tileResetAt });
+  broadcast('ranking-updated', { contest, leaderboard: getRankingLeaderboard() });
+  return contest;
+}
+
+function getRankingContestStatus(date = new Date()) {
+  const contest = activateRankingContest(date);
+  if (!contest) {
+    return { contest: null, leaderboard: [] };
+  }
+  return { contest, leaderboard: getRankingLeaderboard() };
 }
 
 function hasForbiddenSequence(value) {
@@ -784,6 +830,16 @@ function handleCapture(req, res) {
       user.lastLocationTimestamp = typeof currentPoint.timestamp === 'number' ? currentPoint.timestamp : Date.now();
       user.lastSeenAt = nowIso();
 
+      const rankingStatus = getRankingContestStatus(new Date());
+      if (rankingStatus.contest?.scheduledAt && !rankingStatus.contest.startedAt) {
+        sendJson(res, 409, { message: '관리자가 정한 시작 시간 전입니다.', phase, seasonKey });
+        return;
+      }
+      if (rankingStatus.contest?.announcedAt) {
+        sendJson(res, 409, { message: '순위 발표가 끝나 타일을 칠할 수 없습니다.', phase, seasonKey });
+        return;
+      }
+
       if (isAdmin(authUser)) {
         savePersistentState();
         sendJson(res, 200, {
@@ -863,6 +919,60 @@ function handleApi(req, res, pathname, query) {
     const authUser = getAuthUser(req);
     if (!isAdmin(authUser)) {
       sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+      return;
+    }
+
+    if (pathname === '/api/dev/ranking' && req.method === 'GET') {
+      if (!isAdmin(getAuthUser(req))) {
+        sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+        return;
+      }
+      const rankingStatus = getRankingContestStatus(new Date());
+      sendJson(res, 200, rankingStatus);
+      return;
+    }
+
+    if (pathname === '/api/dev/ranking/schedule' && req.method === 'POST') {
+      if (!isAdmin(getAuthUser(req))) {
+        sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+        return;
+      }
+      parseBody(req).then((payload) => {
+        const scheduledAt = new Date(String(payload.scheduledAt || '')).getTime();
+        if (!Number.isFinite(scheduledAt) || scheduledAt <= Date.now()) {
+          sendJson(res, 400, { message: '미래 시간을 정해야 합니다.' });
+          return;
+        }
+        state.rankingContest = {
+          scheduledAt: new Date(scheduledAt).toISOString(),
+          startedAt: null,
+          announcedAt: null,
+          status: 'SCHEDULED',
+        };
+        savePersistentState();
+        broadcast('ranking-updated', { contest: state.rankingContest, leaderboard: [] });
+        sendJson(res, 200, getRankingContestStatus());
+      }).catch((error) => sendJson(res, 400, { message: error.message }));
+      return;
+    }
+
+    if (pathname === '/api/dev/ranking/announce' && req.method === 'POST') {
+      if (!isAdmin(getAuthUser(req))) {
+        sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+        return;
+      }
+      const contest = activateRankingContest(new Date());
+      if (!contest?.startedAt) {
+        sendJson(res, 400, { message: '순위 집계가 아직 시작되지 않았습니다.' });
+        return;
+      }
+      if (!contest.announcedAt) {
+        contest.announcedAt = nowIso();
+        contest.status = 'ANNOUNCED';
+        savePersistentState();
+        broadcast('ranking-updated', { contest, leaderboard: getRankingLeaderboard() });
+      }
+      sendJson(res, 200, getRankingContestStatus());
       return;
     }
     const users = Array.from(state.users.values())
@@ -1205,11 +1315,14 @@ function handleApi(req, res, pathname, query) {
 
   if (pathname === '/api/state' && req.method === 'GET') {
     const leaderboard = getLeaderboard(seasonKey);
+    const ranking = getRankingContestStatus(new Date());
     sendJson(res, 200, {
       seasonKey,
       phase,
       leaderboard,
       season: state.seasons.get(seasonKey) || null,
+      rankingContest: ranking.contest,
+      rankingLeaderboard: ranking.leaderboard,
     });
     return;
   }
@@ -1360,6 +1473,7 @@ async function startServer() {
 
   setInterval(() => {
     resetIfNeeded(new Date());
+    activateRankingContest(new Date());
     const seasonKey = state.currentSeasonKey;
     const season = state.seasons.get(seasonKey);
     if (season) {
