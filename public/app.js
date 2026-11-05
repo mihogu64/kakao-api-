@@ -140,7 +140,7 @@ function renderAccountInfo() {
 function renderAdminPanel() {
   els.adminPanel.hidden = state.role !== 'admin';
   els.ownTeamCaptureCard.hidden = state.role === 'admin';
-  els.leaderboardPanel.hidden = state.role === 'admin';
+  els.leaderboardPanel.hidden = false;
   if (state.role === 'admin') {
     syncAdminUsers();
   }
