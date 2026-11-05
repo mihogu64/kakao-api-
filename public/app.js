@@ -682,7 +682,7 @@ async function syncAdminUsers() {
       return;
     }
     const payload = await response.json();
-    const users = (payload.users || []).filter((user) => user.id !== state.userId);
+    const users = payload.users || [];
     els.adminUserSummary.textContent = `다른 계정 ${users.length}명`;
     els.adminUserList.innerHTML = '';
     users.forEach((user) => {

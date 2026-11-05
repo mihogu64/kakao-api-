@@ -94,6 +94,10 @@ function applyPersistentSnapshot(snapshot) {
     }
   });
   (snapshot.tiles || []).forEach((tile) => {
+    const tileOwner = tile.ownerUserId ? state.users.get(tile.ownerUserId) : null;
+    if (tileOwner?.role === 'admin') {
+      return;
+    }
     tile.ownerTeamId = legacyTeamIds[tile.ownerTeamId] || tile.ownerTeamId;
     const claimedAt = tile.claimedAt ? new Date(tile.claimedAt).getTime() : 0;
     if (claimedAt) {
@@ -780,6 +784,20 @@ function handleCapture(req, res) {
       user.lastLocationTimestamp = typeof currentPoint.timestamp === 'number' ? currentPoint.timestamp : Date.now();
       user.lastSeenAt = nowIso();
 
+      if (isAdmin(authUser)) {
+        savePersistentState();
+        sendJson(res, 200, {
+          message: '관리자는 위치만 저장됩니다.',
+          captured: false,
+          phase,
+          seasonKey,
+          tile: null,
+          tiles: [],
+          blockedTiles: [],
+        });
+        return;
+      }
+
       const capturedTiles = [];
       const blockedTiles = [];
       const capturedTileKeys = new Set();
@@ -842,16 +860,19 @@ function handleApi(req, res, pathname, query) {
   const phase = getSeasonPhase(new Date());
 
   if (pathname === '/api/dev/users' && req.method === 'GET') {
-    if (!isAdmin(getAuthUser(req))) {
+    const authUser = getAuthUser(req);
+    if (!isAdmin(authUser)) {
       sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
       return;
     }
-    const users = Array.from(state.users.values()).map((user) => ({
+    const users = Array.from(state.users.values())
+      .filter((user) => user.id !== authUser.id)
+      .map((user) => ({
       id: user.id,
       username: user.username,
       role: user.role || 'user',
       createdAt: user.createdAt || null,
-    }));
+      }));
     sendJson(res, 200, { users });
     return;
   }
