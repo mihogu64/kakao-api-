@@ -47,6 +47,10 @@ const state = {
   mockDirection: 'right',
   role: 'user',
   rankingContest: null,
+  rankingAnnouncementExpanded: false,
+  rankingAnnouncementLast: [],
+  rankingAnnouncementDismissedAt: null,
+  adminExpandedUserId: null,
 };
 
 const els = {
@@ -59,6 +63,7 @@ const els = {
   accountUsername: document.getElementById('accountUsername'),
   accountTeam: document.getElementById('accountTeam'),
   adminPanel: document.getElementById('adminPanel'),
+  adminUserPanel: document.getElementById('adminUserPanel'),
   adminLeaderSummary: document.getElementById('adminLeaderSummary'),
   adminLeaderboardList: document.getElementById('adminLeaderboardList'),
   adminResetTilesButton: document.getElementById('adminResetTilesButton'),
@@ -101,6 +106,8 @@ const els = {
   rankingAnnouncement: document.getElementById('rankingAnnouncement'),
   rankingWinner: document.getElementById('rankingWinner'),
   rankingAnnouncementList: document.getElementById('rankingAnnouncementList'),
+  rankingAnnouncementClose: document.getElementById('rankingAnnouncementClose'),
+  rankingAnnouncementMore: document.getElementById('rankingAnnouncementMore'),
   zoomInButton: document.getElementById('zoomInButton'),
   zoomOutButton: document.getElementById('zoomOutButton'),
   leaderboardList: document.getElementById('leaderboardList'),
@@ -154,6 +161,7 @@ function renderAccountInfo() {
 
 function renderAdminPanel() {
   els.adminPanel.hidden = state.role !== 'admin';
+  els.adminUserPanel.hidden = state.role !== 'admin';
   els.ownTeamCaptureCard.hidden = state.role === 'admin';
   els.leaderboardPanel.hidden = state.role === 'admin';
   els.gpsPaintedSummary.hidden = state.role === 'admin';
@@ -709,6 +717,7 @@ async function syncAdminUsers() {
     els.adminUserList.innerHTML = '';
     users.forEach((user) => {
       const item = document.createElement('li');
+      item.dataset.userId = user.id;
       const name = document.createElement('button');
       name.type = 'button';
       name.className = 'admin-user-name';
@@ -725,6 +734,15 @@ async function syncAdminUsers() {
       }
       els.adminUserList.appendChild(item);
     });
+    if (state.adminExpandedUserId) {
+      const expandedUser = users.find((user) => user.id === state.adminExpandedUserId);
+      const expandedItem = expandedUser
+        ? Array.from(els.adminUserList.children).find((item) => item.dataset.userId === expandedUser.id)
+        : null;
+      if (expandedUser && expandedItem) {
+        toggleAdminUserDetails(expandedUser, expandedItem);
+      }
+    }
   } catch (error) {
     els.adminUserSummary.textContent = '계정 목록을 불러오지 못했습니다.';
   }
@@ -733,8 +751,11 @@ async function syncAdminUsers() {
     const existingDetails = item.nextElementSibling;
     if (existingDetails?.classList.contains('admin-user-details')) {
       existingDetails.remove();
+      state.adminExpandedUserId = null;
       return;
     }
+    state.adminExpandedUserId = user.id;
+    item.dataset.userId = user.id;
     const details = document.createElement('li');
     details.className = 'admin-user-details';
     details.textContent = '타일 기록을 불러오는 중...';
@@ -979,18 +1000,26 @@ async function syncLeaderboard() {
 function renderRankingAnnouncement(payload) {
   const contest = state.rankingContest;
   const rankings = payload.rankingLeaderboard || [];
+  state.rankingAnnouncementLast = rankings;
   if (!contest?.announcedAt || !rankings.length) {
+    els.rankingAnnouncement.hidden = true;
+    return;
+  }
+  if (state.rankingAnnouncementDismissedAt === contest.announcedAt) {
     els.rankingAnnouncement.hidden = true;
     return;
   }
   els.rankingAnnouncement.hidden = false;
   els.rankingWinner.textContent = `1위 ${rankings[0].username} · ${rankings[0].tiles}칸`;
   els.rankingAnnouncementList.innerHTML = '';
-  rankings.forEach((user, index) => {
+  const visibleRankings = state.rankingAnnouncementExpanded ? rankings : rankings.slice(0, 10);
+  visibleRankings.forEach((user, index) => {
     const item = document.createElement('li');
     item.textContent = `${index + 1}위 ${user.username} · ${user.tiles}칸`;
     els.rankingAnnouncementList.appendChild(item);
   });
+  els.rankingAnnouncementMore.hidden = rankings.length <= 10;
+  els.rankingAnnouncementMore.textContent = state.rankingAnnouncementExpanded ? '접기' : '더보기';
 }
 
 function formatRemainingTime(milliseconds) {
@@ -1641,6 +1670,14 @@ els.adminResetTilesButton.addEventListener('click', resetTilesAsAdmin);
 els.adminRankingScheduleButton.addEventListener('click', scheduleAdminRanking);
 els.adminRankingStartNowButton.addEventListener('click', startAdminRankingNow);
 els.adminRankingEndNowButton.addEventListener('click', endAdminRankingNow);
+els.rankingAnnouncementClose.addEventListener('click', () => {
+  state.rankingAnnouncementDismissedAt = state.rankingContest?.announcedAt || null;
+  els.rankingAnnouncement.hidden = true;
+});
+els.rankingAnnouncementMore.addEventListener('click', () => {
+  state.rankingAnnouncementExpanded = !state.rankingAnnouncementExpanded;
+  renderRankingAnnouncement({ rankingLeaderboard: state.rankingAnnouncementLast });
+});
 els.settingsButton.addEventListener('click', openSettings);
 els.settingsCloseButton.addEventListener('click', closeSettings);
 els.seasonButton.addEventListener('click', openSeasonModal);

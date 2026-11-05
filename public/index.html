@@ -63,9 +63,11 @@
     <div id="map"></div>
     <div id="rankingTimer" class="ranking-timer" hidden aria-live="polite"></div>
     <section id="rankingAnnouncement" class="ranking-announcement" hidden aria-live="polite">
+      <button id="rankingAnnouncementClose" class="ranking-announcement-close" type="button" aria-label="순위 발표 닫기">×</button>
       <strong>개인 순위 발표</strong>
       <div id="rankingWinner" class="ranking-winner"></div>
       <ol id="rankingAnnouncementList"></ol>
+      <button id="rankingAnnouncementMore" class="ranking-announcement-more" type="button" hidden>더보기</button>
     </section>
     <div class="map-zoom-controls" aria-label="지도 확대 축소">
       <button id="zoomInButton" type="button" aria-label="확대">+</button>
@@ -131,11 +133,13 @@
         <button id="adminRankingEndNowButton" class="admin-action-button" type="button">지금까지 끝</button>
         <ol id="adminRankingResults"></ol>
       </div>
-      <div class="admin-user-section">
+    </aside>
+    <aside id="adminUserPanel" class="admin-user-panel" hidden aria-label="계정 관리">
+      <div class="admin-panel-header">
         <strong>계정 관리</strong>
-        <small id="adminUserSummary">계정 목록을 불러오는 중...</small>
-        <ul id="adminUserList"></ul>
+        <span id="adminUserSummary">계정 목록을 불러오는 중...</span>
       </div>
+      <ul id="adminUserList"></ul>
     </aside>
     <aside class="gps-status-card" id="gpsStatusCard" aria-label="현재 위치 상태">
       <button id="gpsStatusToggle" class="gps-status-toggle" type="button" aria-expanded="true">

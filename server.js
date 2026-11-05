@@ -281,7 +281,7 @@ function getRankingLeaderboard() {
     }))
     .filter((user) => user.tiles > 0)
     .sort((left, right) => right.tiles - left.tiles)
-    .slice(0, 10);
+    .slice(0, 100);
 }
 
 function activateRankingContest(date = new Date()) {
