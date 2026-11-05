@@ -458,7 +458,13 @@ async function restoreSession() {
   try {
     const response = await fetch('/api/me', { headers: authHeaders() });
     if (!response.ok) {
-      throw new Error('세션이 만료되었습니다.');
+      if (response.status === 401) {
+        localStorage.removeItem('territory.token');
+        setAuthMode('login');
+        setAuthMessage('세션이 만료되었습니다.');
+        return;
+      }
+      throw new Error(`세션 확인 실패 (${response.status})`);
     }
     const payload = await response.json();
     state.userId = payload.user.id;
@@ -472,8 +478,7 @@ async function restoreSession() {
     els.gameScreen.hidden = false;
     initMap();
   } catch (error) {
-    localStorage.removeItem('territory.token');
-    setAuthMode('login');
+    setAuthMessage('네트워크 연결을 확인한 뒤 다시 시도하세요.');
   }
 }
 
