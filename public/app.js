@@ -57,6 +57,7 @@ const els = {
   accountUsername: document.getElementById('accountUsername'),
   accountTeam: document.getElementById('accountTeam'),
   adminPanel: document.getElementById('adminPanel'),
+  adminLeaderSummary: document.getElementById('adminLeaderSummary'),
   adminResetTilesButton: document.getElementById('adminResetTilesButton'),
   adminUserSummary: document.getElementById('adminUserSummary'),
   adminUserList: document.getElementById('adminUserList'),
@@ -92,6 +93,8 @@ const els = {
   leaderboardUpdated: document.getElementById('leaderboardUpdated'),
   leaderboardToggle: document.getElementById('leaderboardToggle'),
   leaderboardBody: document.getElementById('leaderboardBody'),
+  leaderboardPanel: document.querySelector('.leaderboard-panel'),
+  ownTeamCaptureCard: document.querySelector('.own-team-capture-card'),
   ownTeamCaptureIcon: document.getElementById('ownTeamCaptureIcon'),
   ownTeamCaptureCount: document.getElementById('ownTeamCaptureCount'),
   gpsStatusCard: document.getElementById('gpsStatusCard'),
@@ -136,6 +139,8 @@ function renderAccountInfo() {
 
 function renderAdminPanel() {
   els.adminPanel.hidden = state.role !== 'admin';
+  els.ownTeamCaptureCard.hidden = state.role === 'admin';
+  els.leaderboardPanel.hidden = state.role === 'admin';
   if (state.role === 'admin') {
     syncAdminUsers();
   }
@@ -758,6 +763,11 @@ async function syncLeaderboard() {
       return;
     }
     const payload = await response.json();
+    const leader = payload.leaderboard?.[0];
+    if (state.role === 'admin' && leader) {
+      els.adminLeaderSummary.textContent = `현재 1위 · ${leader.name} ${leader.tiles}칸`;
+      els.adminLeaderSummary.style.color = leader.color;
+    }
     els.leaderboardList.innerHTML = '';
     payload.leaderboard.forEach((team, index) => {
       const item = document.createElement('li');

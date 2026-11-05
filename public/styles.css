@@ -2391,6 +2391,16 @@ html[data-theme="system"] .team-option {
   font-size: 10px;
 }
 
+.admin-leader-summary {
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 1px solid var(--map-line);
+  border-radius: 6px;
+  color: var(--map-ink);
+  background: color-mix(in srgb, var(--map-ink) 5%, transparent);
+  font-weight: 700;
+}
+
 .admin-action-button,
 .admin-delete-button {
   border: 1px solid var(--map-line);
