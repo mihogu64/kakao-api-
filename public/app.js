@@ -692,8 +692,11 @@ async function syncAdminUsers() {
     els.adminUserList.innerHTML = '';
     users.forEach((user) => {
       const item = document.createElement('li');
-      const name = document.createElement('span');
+      const name = document.createElement('button');
+      name.type = 'button';
+      name.className = 'admin-user-name';
       name.textContent = user.role === 'admin' ? `${user.username} (관리자)` : user.username;
+      name.addEventListener('click', () => toggleAdminUserDetails(user, item));
       item.appendChild(name);
       if (user.role !== 'admin') {
         const deleteButton = document.createElement('button');
@@ -707,6 +710,55 @@ async function syncAdminUsers() {
     });
   } catch (error) {
     els.adminUserSummary.textContent = '계정 목록을 불러오지 못했습니다.';
+  }
+
+  async function toggleAdminUserDetails(user, item) {
+    const existingDetails = item.nextElementSibling;
+    if (existingDetails?.classList.contains('admin-user-details')) {
+      existingDetails.remove();
+      return;
+    }
+    const details = document.createElement('li');
+    details.className = 'admin-user-details';
+    details.textContent = '타일 기록을 불러오는 중...';
+    item.after(details);
+    try {
+      const response = await fetch(`/api/dev/users/${encodeURIComponent(user.id)}/tiles`, { headers: authHeaders() });
+      const payload = await response.json();
+      if (handleUnauthorized(response) || !response.ok) {
+        throw new Error(payload.message || '사용자 정보를 불러오지 못했습니다.');
+      }
+      details.innerHTML = '';
+      const summary = document.createElement('div');
+      summary.textContent = `${payload.user.teamName} · 타일 ${payload.tiles.length}개 · 개인 ${payload.user.personalPoints}점`;
+      details.appendChild(summary);
+      if (!payload.tiles.length) {
+        const empty = document.createElement('small');
+        empty.textContent = '점령 기록 없음';
+        details.appendChild(empty);
+        return;
+      }
+      const tileList = document.createElement('ol');
+      payload.tiles.slice(0, 20).forEach((tile) => {
+        const tileItem = document.createElement('li');
+        const time = tile.claimedAt ? new Date(tile.claimedAt).toLocaleString('ko-KR') : '시각 없음';
+        const latitude = Number(tile.centerLat);
+        const longitude = Number(tile.centerLng);
+        const coordinates = Number.isFinite(latitude) && Number.isFinite(longitude)
+          ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+          : '좌표 없음';
+        tileItem.textContent = `${time} · ${coordinates}`;
+        tileList.appendChild(tileItem);
+      });
+      details.appendChild(tileList);
+      if (payload.tiles.length > 20) {
+        const more = document.createElement('small');
+        more.textContent = `최근 20개 표시 · 전체 ${payload.tiles.length}개`;
+        details.appendChild(more);
+      }
+    } catch (error) {
+      details.textContent = error.message;
+    }
   }
 }
 

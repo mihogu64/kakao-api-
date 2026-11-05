@@ -856,6 +856,42 @@ function handleApi(req, res, pathname, query) {
     return;
   }
 
+  const adminUserTilesMatch = pathname.match(/^\/api\/dev\/users\/([^/]+)\/tiles$/);
+  if (adminUserTilesMatch && req.method === 'GET') {
+    if (!isAdmin(getAuthUser(req))) {
+      sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+      return;
+    }
+    const user = getUserById(adminUserTilesMatch[1]);
+    if (!user) {
+      sendJson(res, 404, { message: '사용자를 찾을 수 없습니다.' });
+      return;
+    }
+    const team = user.teamId ? state.teams.get(user.teamId) : null;
+    const tiles = Array.from(state.tiles.values())
+      .filter((tile) => tile.ownerUserId === user.id)
+      .sort((left, right) => new Date(right.claimedAt || 0) - new Date(left.claimedAt || 0))
+      .map((tile) => ({
+        tileKey: tile.tileKey,
+        seasonKey: tile.seasonKey,
+        centerLat: tile.centerLat,
+        centerLng: tile.centerLng,
+        claimedAt: tile.claimedAt,
+      }));
+    sendJson(res, 200, {
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role || 'user',
+        teamName: team?.name || '팀 없음',
+        personalPoints: user.personalPoints || 0,
+        groupPoints: user.groupPoints || 0,
+      },
+      tiles,
+    });
+    return;
+  }
+
   if (pathname === '/api/dev/reset-tiles' && req.method === 'POST') {
     const authUser = getAuthUser(req);
     if (!authUser) {

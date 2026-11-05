@@ -2481,6 +2481,54 @@ html[data-theme="system"] .team-option {
   font-size: 10px;
 }
 
+.admin-user-name {
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  color: var(--map-ink);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-user-name:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.admin-user-details {
+  display: block !important;
+  margin: 0 0 4px 8px;
+  padding: 6px;
+  border-left: 2px solid var(--map-line);
+  color: var(--map-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.admin-user-details ol {
+  max-height: 120px;
+  margin: 4px 0 0;
+  padding-left: 16px;
+  overflow-y: auto;
+}
+
+.admin-user-details li {
+  display: list-item;
+  margin: 2px 0;
+  white-space: normal;
+}
+
+.admin-user-details small {
+  display: block;
+  margin-top: 4px;
+  color: var(--map-muted);
+}
+
 @media (max-width: 620px) {
   .admin-panel {
     top: 10px;
