@@ -98,6 +98,9 @@ const els = {
   tileToast: document.getElementById('tileToast'),
   gridStatus: document.getElementById('gridStatus'),
   rankingTimer: document.getElementById('rankingTimer'),
+  rankingAnnouncement: document.getElementById('rankingAnnouncement'),
+  rankingWinner: document.getElementById('rankingWinner'),
+  rankingAnnouncementList: document.getElementById('rankingAnnouncementList'),
   zoomInButton: document.getElementById('zoomInButton'),
   zoomOutButton: document.getElementById('zoomOutButton'),
   leaderboardList: document.getElementById('leaderboardList'),
@@ -924,6 +927,7 @@ async function syncLeaderboard() {
     const payload = await response.json();
     state.rankingContest = payload.rankingContest || null;
     renderRankingTimer();
+    renderRankingAnnouncement(payload);
     const leader = payload.leaderboard?.[0];
     if (state.role === 'admin' && leader) {
       els.adminLeaderSummary.textContent = `현재 1위 · ${leader.name} ${leader.tiles}칸`;
@@ -970,6 +974,23 @@ async function syncLeaderboard() {
   } catch (error) {
     // Leaderboard polling can recover on the next interval.
   }
+}
+
+function renderRankingAnnouncement(payload) {
+  const contest = state.rankingContest;
+  const rankings = payload.rankingLeaderboard || [];
+  if (!contest?.announcedAt || !rankings.length) {
+    els.rankingAnnouncement.hidden = true;
+    return;
+  }
+  els.rankingAnnouncement.hidden = false;
+  els.rankingWinner.textContent = `1위 ${rankings[0].username} · ${rankings[0].tiles}칸`;
+  els.rankingAnnouncementList.innerHTML = '';
+  rankings.forEach((user, index) => {
+    const item = document.createElement('li');
+    item.textContent = `${index + 1}위 ${user.username} · ${user.tiles}칸`;
+    els.rankingAnnouncementList.appendChild(item);
+  });
 }
 
 function formatRemainingTime(milliseconds) {

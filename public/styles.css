@@ -1082,6 +1082,47 @@ body {
   color: #ffc66d;
 }
 
+.ranking-announcement {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 20;
+  width: min(320px, calc(100vw - 40px));
+  max-height: 55vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 18px;
+  border: 1px solid rgba(255, 198, 109, 0.6);
+  border-radius: 12px;
+  color: var(--map-ink);
+  background: var(--map-panel);
+  box-shadow: var(--map-shadow);
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.ranking-announcement > strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+.ranking-winner {
+  margin-bottom: 10px;
+  color: #b85b00;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.ranking-announcement ol {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 22px;
+  color: var(--map-muted);
+  text-align: left;
+}
+
 .test-controller {
   position: absolute;
   top: 18px;

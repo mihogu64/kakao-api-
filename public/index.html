@@ -62,6 +62,11 @@
   <main class="map-wrap" id="gameScreen" hidden>
     <div id="map"></div>
     <div id="rankingTimer" class="ranking-timer" hidden aria-live="polite"></div>
+    <section id="rankingAnnouncement" class="ranking-announcement" hidden aria-live="polite">
+      <strong>개인 순위 발표</strong>
+      <div id="rankingWinner" class="ranking-winner"></div>
+      <ol id="rankingAnnouncementList"></ol>
+    </section>
     <div class="map-zoom-controls" aria-label="지도 확대 축소">
       <button id="zoomInButton" type="button" aria-label="확대">+</button>
       <button id="zoomOutButton" type="button" aria-label="축소">−</button>
