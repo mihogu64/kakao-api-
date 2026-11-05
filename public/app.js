@@ -58,6 +58,7 @@ const els = {
   accountTeam: document.getElementById('accountTeam'),
   adminPanel: document.getElementById('adminPanel'),
   adminLeaderSummary: document.getElementById('adminLeaderSummary'),
+  adminLeaderboardList: document.getElementById('adminLeaderboardList'),
   adminResetTilesButton: document.getElementById('adminResetTilesButton'),
   adminUserSummary: document.getElementById('adminUserSummary'),
   adminUserList: document.getElementById('adminUserList'),
@@ -140,7 +141,7 @@ function renderAccountInfo() {
 function renderAdminPanel() {
   els.adminPanel.hidden = state.role !== 'admin';
   els.ownTeamCaptureCard.hidden = state.role === 'admin';
-  els.leaderboardPanel.hidden = false;
+  els.leaderboardPanel.hidden = state.role === 'admin';
   if (state.role === 'admin') {
     syncAdminUsers();
   }
@@ -767,6 +768,17 @@ async function syncLeaderboard() {
     if (state.role === 'admin' && leader) {
       els.adminLeaderSummary.textContent = `현재 1위 · ${leader.name} ${leader.tiles}칸`;
       els.adminLeaderSummary.style.color = leader.color;
+      els.adminLeaderboardList.innerHTML = '';
+      payload.leaderboard.forEach((team) => {
+        const item = document.createElement('li');
+        const name = document.createElement('span');
+        name.textContent = team.name;
+        name.style.color = team.color;
+        const score = document.createElement('span');
+        score.textContent = `${team.tiles}칸`;
+        item.append(name, score);
+        els.adminLeaderboardList.appendChild(item);
+      });
     }
     els.leaderboardList.innerHTML = '';
     payload.leaderboard.forEach((team, index) => {

@@ -2359,8 +2359,8 @@ html[data-theme="system"] .team-option {
 
 .admin-panel {
   position: absolute;
-  top: 72px;
-  right: 18px;
+  top: 18px;
+  left: 18px;
   z-index: 25;
   width: 220px;
   padding: 12px;
@@ -2399,6 +2399,32 @@ html[data-theme="system"] .team-option {
   color: var(--map-ink);
   background: color-mix(in srgb, var(--map-ink) 5%, transparent);
   font-weight: 700;
+}
+
+.admin-team-leaderboard {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--map-line);
+}
+
+.admin-team-leaderboard > strong {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--map-ink);
+}
+
+.admin-team-leaderboard ol {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.admin-team-leaderboard li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--map-muted);
 }
 
 .admin-action-button,
@@ -2457,8 +2483,8 @@ html[data-theme="system"] .team-option {
 
 @media (max-width: 620px) {
   .admin-panel {
-    top: 52px;
-    right: 10px;
+    top: 10px;
+    left: 10px;
     width: 170px;
     padding: 8px;
     font-size: 9px;
