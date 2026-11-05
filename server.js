@@ -56,6 +56,7 @@ function getPersistentSnapshot() {
     currentSeasonKey: state.currentSeasonKey,
     tileResetAt: state.tileResetAt,
     users: Array.from(state.users.values()),
+    sessions: Array.from(state.sessions.entries()),
     teams: Array.from(state.teams.values()),
     tiles: Array.from(state.tiles.values()),
     seasons: Array.from(state.seasons.values()),
@@ -71,6 +72,11 @@ function applyPersistentSnapshot(snapshot) {
     state.authByUsername.set(user.username, user);
     if (user.teamId) {
       state.memberships.set(user.id, user.teamId);
+    }
+  });
+  (snapshot.sessions || []).forEach(([token, session]) => {
+    if (token && session?.userId && state.users.has(session.userId)) {
+      state.sessions.set(token, session);
     }
   });
   (snapshot.teams || []).forEach((team) => {
@@ -147,6 +153,7 @@ async function loadPersistentState() {
     if (rows[0]?.snapshot) {
       state.users.clear();
       state.authByUsername.clear();
+      state.sessions.clear();
       state.memberships.clear();
       state.teams = new Map(FIXED_TEAM_DEFINITIONS.map((team) => [team.id, {
         ...team,
@@ -562,6 +569,7 @@ function isAdmin(user) {
 function createSession(userId) {
   const token = createToken();
   state.sessions.set(token, { userId, createdAt: nowIso() });
+  savePersistentState();
   return token;
 }
 
