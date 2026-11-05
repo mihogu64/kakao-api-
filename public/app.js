@@ -275,7 +275,7 @@ function logout() {
 function updateGpsDebug(status, position = null) {
   els.gpsDebugStatus.textContent = status;
   els.gpsStatusLive.textContent = status;
-  const tone = status.includes('점령 가능') || status.includes('위치 수신 중')
+  const tone = status.includes('위치 수신 중')
     ? 'ready'
     : status.includes('실패') || status.includes('오류') || status.includes('보류') || status.includes('보호막')
       ? 'warning'
@@ -563,12 +563,7 @@ async function syncLocationToServer(location, claimPoints = []) {
     if (payload.tiles?.length || payload.tile) {
       renderPaintedTileSummary();
       renderGrid(state.map);
-      showTileToast(`타일 ${payload.tiles?.length || 1}개 점령 완료 · 5시간 보호`, 'success');
-    }
-    if (payload.blockedTiles?.length) {
-      const remaining = formatShieldRemaining(payload.blockedTiles[0].remainingMs);
-      updateGpsDebug(`보호막으로 점령 불가 · ${remaining} 후 가능`);
-      showTileToast(`보호막으로 점령 불가 · ${remaining} 후 가능`, 'error');
+      showTileToast(`타일 ${payload.tiles?.length || 1}개 점령 완료`, 'success');
     }
   } catch (error) {
     if (claimPoints.length) {
@@ -687,8 +682,8 @@ async function syncAdminUsers() {
       return;
     }
     const payload = await response.json();
-    const users = payload.users || [];
-    els.adminUserSummary.textContent = `등록 계정 ${users.length}명`;
+    const users = (payload.users || []).filter((user) => user.id !== state.userId);
+    els.adminUserSummary.textContent = `다른 계정 ${users.length}명`;
     els.adminUserList.innerHTML = '';
     users.forEach((user) => {
       const item = document.createElement('li');
@@ -1157,7 +1152,7 @@ function processLocation(position) {
   const suspicious = isSuspiciousLocation(state.previousLocation, current);
   const claimable = !suspicious && (current.accuracy === null || current.accuracy <= GPS_CONFIG.maxAccuracyForClaim);
   if (claimable) {
-    updateGpsDebug('점령 가능', position);
+    updateGpsDebug('위치 수신 중', position);
   }
   let route = claimable ? interpolateRoute(state.previousClaimLocation, current) : [];
   const newTiles = [];
@@ -1180,7 +1175,7 @@ function processLocation(position) {
     if (!canBridgeNextUpdate) {
       state.previousClaimLocation = null;
     }
-    updateGpsDebug(displayOutlier ? '위치 튐 의심 · 점령 보류' : 'GPS 정확도 부족 · 점령 보류');
+    updateGpsDebug(displayOutlier ? '위치 튐 의심' : 'GPS 정확도 낮음');
   }
   state.previousLocation = current;
 }

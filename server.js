@@ -12,7 +12,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const ADMIN_USERNAME = String(process.env.ADMIN_USERNAME || '').trim();
 const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || '');
 const GRID_SIZE_DEGREES = 0.00009;
-const SHIELD_MS = 5 * 60 * 60 * 1000;
+const SHIELD_MS = 0;
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const TEAM_BALANCE_LIMIT = 5;
 const ONLINE_WINDOW_MS = 20 * 1000;
@@ -794,7 +794,7 @@ function handleCapture(req, res) {
         capturedTileKeys.add(tile.tileKey);
         const record = getTileRecord(seasonKey, tile.tileKey, tile);
         const shieldExpiresAt = record.shieldExpiresAt ? new Date(record.shieldExpiresAt).getTime() : 0;
-        const isOwnedByOtherTeam = record.ownerTeamId && record.ownerTeamId !== team?.id;
+        const isOwnedByOtherTeam = SHIELD_MS > 0 && record.ownerTeamId && record.ownerTeamId !== team?.id;
         if (isOwnedByOtherTeam && shieldExpiresAt > Date.now()) {
           blockedTiles.push({
             tileKey: record.tileKey,
@@ -1006,6 +1006,7 @@ function handleApi(req, res, pathname, query) {
 
     const activeSince = Date.now() - 5 * 60 * 1000;
     const players = Array.from(state.users.values())
+      .filter((user) => user.role !== 'admin')
       .filter((user) => user.lastLat !== null && user.lastLng !== null && user.lastSeenAt && new Date(user.lastSeenAt).getTime() >= activeSince)
       .map((user) => ({
         id: user.id,
