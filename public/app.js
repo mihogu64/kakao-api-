@@ -98,6 +98,7 @@ const els = {
   ownTeamCaptureCard: document.querySelector('.own-team-capture-card'),
   ownTeamCaptureIcon: document.getElementById('ownTeamCaptureIcon'),
   ownTeamCaptureCount: document.getElementById('ownTeamCaptureCount'),
+  gpsPaintedSummary: document.querySelector('.gps-painted-summary'),
   gpsStatusCard: document.getElementById('gpsStatusCard'),
   gpsDebugStatus: document.getElementById('gpsDebugStatus'),
   gpsDebugPosition: document.getElementById('gpsDebugPosition'),
@@ -142,6 +143,7 @@ function renderAdminPanel() {
   els.adminPanel.hidden = state.role !== 'admin';
   els.ownTeamCaptureCard.hidden = state.role === 'admin';
   els.leaderboardPanel.hidden = state.role === 'admin';
+  els.gpsPaintedSummary.hidden = state.role === 'admin';
   if (state.role === 'admin') {
     syncAdminUsers();
   }
