@@ -297,6 +297,13 @@ function getRankingContestStatus(date = new Date()) {
   if (!contest) {
     return { contest: null, leaderboard: [] };
   }
+  if (contest.startedAt && !contest.announcedAt && contest.endAt
+    && new Date(contest.endAt).getTime() <= date.getTime()) {
+    contest.announcedAt = date.toISOString();
+    contest.status = 'ANNOUNCED';
+    savePersistentState();
+    broadcast('ranking-updated', { contest, leaderboard: getRankingLeaderboard() });
+  }
   return { contest, leaderboard: getRankingLeaderboard() };
 }
 
@@ -835,7 +842,8 @@ function handleCapture(req, res) {
         sendJson(res, 409, { message: '관리자가 정한 시작 시간 전입니다.', phase, seasonKey });
         return;
       }
-      if (rankingStatus.contest?.announcedAt) {
+      if (rankingStatus.contest?.announcedAt
+        || (rankingStatus.contest?.endAt && new Date(rankingStatus.contest.endAt).getTime() <= Date.now())) {
         sendJson(res, 409, { message: '순위 발표가 끝나 타일을 칠할 수 없습니다.', phase, seasonKey });
         return;
       }
@@ -949,13 +957,15 @@ function handleApi(req, res, pathname, query) {
       return;
     }
     parseBody(req).then((payload) => {
-      const scheduledAt = new Date(String(payload.scheduledAt || '')).getTime();
-      if (!Number.isFinite(scheduledAt) || scheduledAt <= Date.now()) {
-        sendJson(res, 400, { message: '미래 시간을 정해야 합니다.' });
+      const scheduledAt = new Date(String(payload.startAt || payload.scheduledAt || '')).getTime();
+      const endAt = new Date(String(payload.endAt || '')).getTime();
+      if (!Number.isFinite(scheduledAt) || !Number.isFinite(endAt) || scheduledAt <= Date.now() || endAt <= scheduledAt) {
+        sendJson(res, 400, { message: '시작과 종료 시간을 올바르게 정하세요.' });
         return;
       }
       state.rankingContest = {
         scheduledAt: new Date(scheduledAt).toISOString(),
+        endAt: new Date(endAt).toISOString(),
         startedAt: null,
         announcedAt: null,
         status: 'SCHEDULED',
@@ -967,22 +977,41 @@ function handleApi(req, res, pathname, query) {
     return;
   }
 
-  if (pathname === '/api/dev/ranking/announce' && req.method === 'POST') {
+  if (pathname === '/api/dev/ranking/start-now' && req.method === 'POST') {
     if (!isAdmin(getAuthUser(req))) {
       sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
       return;
     }
-    const contest = activateRankingContest(new Date());
-    if (!contest?.startedAt) {
-      sendJson(res, 400, { message: '순위 집계가 아직 시작되지 않았습니다.' });
+    const now = new Date();
+    state.rankingContest = {
+      scheduledAt: now.toISOString(),
+      endAt: null,
+      startedAt: now.toISOString(),
+      announcedAt: null,
+      status: 'PLAYING',
+    };
+    state.tiles.clear();
+    state.tileResetAt = now.toISOString();
+    savePersistentState();
+    broadcast('tiles-reset', { at: state.tileResetAt });
+    sendJson(res, 200, getRankingContestStatus(now));
+    return;
+  }
+
+  if (pathname === '/api/dev/ranking/end-now' && req.method === 'POST') {
+    if (!isAdmin(getAuthUser(req))) {
+      sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
       return;
     }
-    if (!contest.announcedAt) {
-      contest.announcedAt = nowIso();
-      contest.status = 'ANNOUNCED';
-      savePersistentState();
-      broadcast('ranking-updated', { contest, leaderboard: getRankingLeaderboard() });
+    const contest = getRankingContestStatus(new Date()).contest;
+    if (!contest?.startedAt || contest.announcedAt) {
+      sendJson(res, 400, { message: '진행 중인 순위 집계가 없습니다.' });
+      return;
     }
+    contest.announcedAt = nowIso();
+    contest.status = 'ANNOUNCED';
+    savePersistentState();
+    broadcast('ranking-updated', { contest, leaderboard: getRankingLeaderboard() });
     sendJson(res, 200, getRankingContestStatus());
     return;
   }

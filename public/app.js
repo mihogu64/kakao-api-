@@ -63,9 +63,11 @@ const els = {
   adminLeaderboardList: document.getElementById('adminLeaderboardList'),
   adminResetTilesButton: document.getElementById('adminResetTilesButton'),
   adminRankingStatus: document.getElementById('adminRankingStatus'),
-  adminRankingTime: document.getElementById('adminRankingTime'),
+  adminRankingStartTime: document.getElementById('adminRankingStartTime'),
+  adminRankingEndTime: document.getElementById('adminRankingEndTime'),
   adminRankingScheduleButton: document.getElementById('adminRankingScheduleButton'),
-  adminRankingAnnounceButton: document.getElementById('adminRankingAnnounceButton'),
+  adminRankingStartNowButton: document.getElementById('adminRankingStartNowButton'),
+  adminRankingEndNowButton: document.getElementById('adminRankingEndNowButton'),
   adminRankingResults: document.getElementById('adminRankingResults'),
   adminUserSummary: document.getElementById('adminUserSummary'),
   adminUserList: document.getElementById('adminUserList'),
@@ -286,7 +288,7 @@ function logout() {
 function updateGpsDebug(status, position = null) {
   els.gpsDebugStatus.textContent = status;
   els.gpsStatusLive.textContent = status;
-  const tone = status.includes('위치 수신 중')
+  const tone = status.includes('위치 수신 중') || status.includes('점령 가능')
     ? 'ready'
     : status.includes('실패') || status.includes('오류') || status.includes('보류') || status.includes('보호막')
       ? 'warning'
@@ -772,7 +774,7 @@ async function syncAdminUsers() {
 function renderAdminRanking(payload) {
   const contest = payload.contest;
   if (!contest) {
-    els.adminRankingStatus.textContent = '발표 시간을 정하세요.';
+    els.adminRankingStatus.textContent = '언제부터 시작하고 언제까지 할지 정하세요.';
     els.adminRankingResults.innerHTML = '';
     return;
   }
@@ -781,7 +783,7 @@ function renderAdminRanking(payload) {
     ? `발표 완료 · ${formatTime(contest.announcedAt)}`
     : contest.startedAt
       ? `집계 중 · 시작 ${formatTime(contest.startedAt)}`
-      : `예약됨 · ${formatTime(contest.scheduledAt)}`;
+      : `예약됨 · ${formatTime(contest.scheduledAt)} ~ ${formatTime(contest.endAt)}`;
   els.adminRankingResults.innerHTML = '';
   (payload.leaderboard || []).forEach((user, index) => {
     const item = document.createElement('li');
@@ -806,16 +808,17 @@ async function syncAdminRanking() {
 }
 
 async function scheduleAdminRanking() {
-  if (!els.adminRankingTime.value) {
-    window.alert('순위 집계 시작 시간을 정하세요.');
+  if (!els.adminRankingStartTime.value || !els.adminRankingEndTime.value) {
+    window.alert('시작과 종료 시간을 정하세요.');
     return;
   }
-  const scheduledAt = new Date(els.adminRankingTime.value).toISOString();
+  const scheduledAt = new Date(els.adminRankingStartTime.value).toISOString();
+  const endAt = new Date(els.adminRankingEndTime.value).toISOString();
   try {
     const response = await fetch('/api/dev/ranking/schedule', {
       method: 'POST',
       headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scheduledAt }),
+      body: JSON.stringify({ startAt: scheduledAt, endAt }),
     });
     const payload = await response.json();
     if (handleUnauthorized(response) || !response.ok) {
@@ -827,15 +830,31 @@ async function scheduleAdminRanking() {
   }
 }
 
-async function announceAdminRanking() {
+async function startAdminRankingNow() {
   try {
-    const response = await fetch('/api/dev/ranking/announce', {
+    const response = await fetch('/api/dev/ranking/start-now', {
       method: 'POST',
       headers: authHeaders(),
     });
     const payload = await response.json();
     if (handleUnauthorized(response) || !response.ok) {
-      throw new Error(payload.message || '순위를 발표하지 못했습니다.');
+      throw new Error(payload.message || '순위를 시작하지 못했습니다.');
+    }
+
+    async function endAdminRankingNow() {
+      try {
+        const response = await fetch('/api/dev/ranking/end-now', {
+          method: 'POST',
+          headers: authHeaders(),
+        });
+        const payload = await response.json();
+        if (handleUnauthorized(response) || !response.ok) {
+          throw new Error(payload.message || '순위를 종료하지 못했습니다.');
+        }
+        renderAdminRanking(payload);
+      } catch (error) {
+        window.alert(error.message);
+      }
     }
     renderAdminRanking(payload);
   } catch (error) {
@@ -979,7 +998,10 @@ function renderRankingTimer() {
     els.rankingTimer.className = 'ranking-timer scheduled';
     return;
   }
-  els.rankingTimer.textContent = '순위 집계 진행 중';
+  const remaining = contest.endAt ? new Date(contest.endAt).getTime() - Date.now() : 0;
+  els.rankingTimer.textContent = contest.endAt
+    ? `순위 집계 종료까지 ${formatRemainingTime(remaining)}`
+    : '순위 집계 진행 중';
   els.rankingTimer.className = 'ranking-timer active';
 }
 
@@ -1277,7 +1299,7 @@ function processLocation(position) {
   const suspicious = isSuspiciousLocation(state.previousLocation, current);
   const claimable = !suspicious && (current.accuracy === null || current.accuracy <= GPS_CONFIG.maxAccuracyForClaim);
   if (claimable) {
-    updateGpsDebug('위치 수신 중', position);
+    updateGpsDebug(state.role === 'admin' ? '위치 수신 중' : '점령 가능', position);
   }
   let route = claimable ? interpolateRoute(state.previousClaimLocation, current) : [];
   const newTiles = [];
@@ -1300,7 +1322,11 @@ function processLocation(position) {
     if (!canBridgeNextUpdate) {
       state.previousClaimLocation = null;
     }
-    updateGpsDebug(displayOutlier ? '위치 튐 의심' : 'GPS 정확도 낮음');
+    updateGpsDebug(
+      state.role === 'admin'
+        ? '위치 수신 중'
+        : (displayOutlier ? '위치 튐 의심 · 점령 보류' : 'GPS 정확도 부족 · 점령 보류'),
+    );
   }
   state.previousLocation = current;
 }
@@ -1586,7 +1612,8 @@ els.authForm.addEventListener('submit', submitAuth);
 els.accountToggle.addEventListener('click', toggleAccountPanel);
 els.adminResetTilesButton.addEventListener('click', resetTilesAsAdmin);
 els.adminRankingScheduleButton.addEventListener('click', scheduleAdminRanking);
-els.adminRankingAnnounceButton.addEventListener('click', announceAdminRanking);
+els.adminRankingStartNowButton.addEventListener('click', startAdminRankingNow);
+els.adminRankingEndNowButton.addEventListener('click', endAdminRankingNow);
 els.settingsButton.addEventListener('click', openSettings);
 els.settingsCloseButton.addEventListener('click', closeSettings);
 els.seasonButton.addEventListener('click', openSeasonModal);

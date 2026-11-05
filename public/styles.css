@@ -2494,6 +2494,13 @@ html[data-theme="system"] .team-option {
   color: var(--map-ink);
 }
 
+.admin-ranking-label {
+  display: grid;
+  gap: 3px;
+  color: var(--map-muted);
+  font-size: 10px;
+}
+
 .admin-ranking-section small {
   color: var(--map-muted);
   font-size: 10px;
