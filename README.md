@@ -42,6 +42,8 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 `SUPABASE_SERVICE_ROLE_KEY`는 서버 환경 변수에만 저장하고 브라우저 코드나 GitHub에 공개하지 마세요. 서버가 시작될 때 Supabase의 저장 상태를 복원하고, 계정·팀·타일 변경 후 최신 상태를 자동으로 저장합니다. 환경 변수가 없으면 기존 `data/state.json` 방식으로 동작합니다.
 
+관리자 계정은 Render Environment에 `ADMIN_USERNAME`과 `ADMIN_PASSWORD`를 추가하면 서버 시작 시 자동으로 생성·복원됩니다. 관리자 계정은 현재 개발자 메뉴의 타일 초기화와 계정 삭제 기능을 사용할 수 있으며, 일반 계정에는 이 권한이 없습니다.
+
 ## 공유 저장 동작
 
 현재 버전부터 로그인한 사용자의 마지막 위치와 칠한 타일은 서버의 `data/state.json`에 저장됩니다. 따라서 같은 서버를 다시 시작해도 저장된 계정, 위치, 타일을 복구할 수 있습니다. 로그인한 다른 사용자는 5초마다 다른 사용자의 최근 위치와 공유 타일을 받아 지도에서 확인합니다.

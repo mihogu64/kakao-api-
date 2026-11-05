@@ -9,6 +9,8 @@ const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'state.json');
 const SUPABASE_URL = String(process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const ADMIN_USERNAME = String(process.env.ADMIN_USERNAME || '').trim();
+const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || '');
 const GRID_SIZE_DEGREES = 0.00009;
 const SHIELD_MS = 5 * 60 * 60 * 1000;
 const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
@@ -248,8 +250,6 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-const PASSWORD_SPECIALS = '!@#$%^&*()_+-=';
-
 function hasForbiddenSequence(value) {
   const normalized = value.toLowerCase();
   const sequences = ['0123', '1234', '2345', '3456', '4567', '5678', '6789', 'abcd', 'bcde', 'cdef', 'qwer', 'wert', 'erty', 'qwerty'];
@@ -265,9 +265,6 @@ function validateCredentials(username, password) {
   }
   if ((password.match(/[0-9]/g) || []).length < 2) {
     return '비밀번호에는 숫자가 2개 이상 필요합니다.';
-  }
-  if ((password.match(/[!@#$%^&*()_+\-=]/g) || []).length < 1) {
-    return `비밀번호에는 특수문자(${PASSWORD_SPECIALS}) 중 1개 이상이 필요합니다.`;
   }
   if (hasForbiddenSequence(username) || hasForbiddenSequence(password)) {
     return '1234, aaaa, qwerty처럼 연속되거나 반복되는 문자는 사용할 수 없습니다.';
@@ -482,6 +479,27 @@ function createUser(username, password, teamId = null) {
   }
   savePersistentState();
   return user;
+}
+
+function ensureAdminAccount() {
+  if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+    return;
+  }
+
+  const existingUser = state.authByUsername.get(ADMIN_USERNAME);
+  if (existingUser) {
+    existingUser.password = ADMIN_PASSWORD;
+    existingUser.role = 'admin';
+    return;
+  }
+
+  const user = createUser(ADMIN_USERNAME, ADMIN_PASSWORD);
+  user.role = 'admin';
+  savePersistentState();
+}
+
+function isAdmin(user) {
+  return user?.role === 'admin';
 }
 
 function createSession(userId) {
@@ -824,6 +842,10 @@ function handleApi(req, res, pathname, query) {
   const phase = getSeasonPhase(new Date());
 
   if (pathname === '/api/dev/users' && req.method === 'GET') {
+    if (!isAdmin(getAuthUser(req))) {
+      sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+      return;
+    }
     const users = Array.from(state.users.values()).map((user) => ({
       username: user.username,
       createdAt: user.createdAt || null,
@@ -836,6 +858,10 @@ function handleApi(req, res, pathname, query) {
     const authUser = getAuthUser(req);
     if (!authUser) {
       sendJson(res, 401, { message: '로그인이 필요합니다.' });
+      return;
+    }
+    if (!isAdmin(authUser)) {
+      sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
       return;
     }
 
@@ -853,12 +879,20 @@ function handleApi(req, res, pathname, query) {
       sendJson(res, 401, { message: '로그인이 필요합니다.' });
       return;
     }
+    if (!isAdmin(authUser)) {
+      sendJson(res, 403, { message: '관리자 권한이 필요합니다.' });
+      return;
+    }
 
     parseBody(req).then((payload) => {
       const targetUserId = String(payload.userId || authUser.id).trim();
       const targetUser = getUserById(targetUserId);
       if (!targetUser) {
         sendJson(res, 404, { message: '삭제할 사용자를 찾을 수 없습니다.' });
+        return;
+      }
+      if (targetUser.role === 'admin') {
+        sendJson(res, 403, { message: '관리자 계정은 삭제할 수 없습니다.' });
         return;
       }
 
@@ -987,7 +1021,7 @@ function handleApi(req, res, pathname, query) {
       const token = createSession(user.id);
       sendJson(res, 200, {
         token,
-        user: { id: user.id, username: user.username, teamId: user.teamId },
+        user: { id: user.id, username: user.username, teamId: user.teamId, role: user.role || 'user' },
         team: sanitizeTeam(user.teamId ? state.teams.get(user.teamId) : null),
       });
     }).catch((error) => sendJson(res, 400, { message: error.message }));
@@ -1007,6 +1041,7 @@ function handleApi(req, res, pathname, query) {
         id: user.id,
         username: user.username,
         teamId: user.teamId,
+        role: user.role || 'user',
         personalPoints: user.personalPoints,
         groupPoints: user.groupPoints,
       },
@@ -1259,6 +1294,7 @@ const server = http.createServer((req, res) => {
 
 async function startServer() {
   await loadPersistentState();
+  ensureAdminAccount();
   ensureSeason(startOfWeekKey(new Date()));
   savePersistentState();
 

@@ -304,9 +304,6 @@ function validateSignupCredentials(username, password) {
   if ((password.match(/[0-9]/g) || []).length < 2) {
     return '비밀번호에는 숫자가 2개 이상 필요합니다.';
   }
-  if (!/[!@#$%^&*()_+\-=]/.test(password)) {
-    return '비밀번호에는 허용된 특수문자 1개 이상이 필요합니다.';
-  }
   if (hasForbiddenCredentialSequence(username) || hasForbiddenCredentialSequence(password)) {
     return '1234, aaaa, qwerty처럼 연속되거나 반복되는 문자는 사용할 수 없습니다.';
   }
